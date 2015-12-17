@@ -1,0 +1,21 @@
+name: DeltaBans
+main: com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin
+version: 1.0
+author: Trace Bachi (tracebachi@yahoo.com, BigBossZee)
+commands:
+  ban:
+    description: Allows the user to ban others and their IP.
+  unban:
+    description: Allows the user to unban others.
+  tempban:
+    description: Allows the user to ban others for a duration.
+  nameban:
+    description: Allows the user to ban names instead of IPs.
+  checkban:
+    description: Allows the user to check if names or IPs are banned.
+
+permissions:
+  DeltaRedis.Ban:
+    description: Main permission for banning and unbanning.
+  DeltaRedis.CheckBan:
+    description: Permission for checking bans.

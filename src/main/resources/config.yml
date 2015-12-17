@@ -1,0 +1,20 @@
+# DeltaBans Configuration File
+
+# MySQL connection information
+Database:
+
+  # Username and password for connecting to the database.
+  Username: mc
+  Password: mc
+
+  # This should have three parts: the main URL, the port number, and database name.
+  URL: localhost:5432/mc18
+
+# xAuth table information
+xAuth:
+
+  # Table used by xAuth to save account information
+  AccountsTable: accounts
+
+# Used for debugging DeltaBans
+DebugMode: False

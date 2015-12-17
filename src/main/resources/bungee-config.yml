@@ -1,0 +1,18 @@
+# DeltaBans Configuration File
+
+# Delay between every save of all the bans to bans.json
+MinutesPerBanSave: 10
+
+# Formatting for a permanent ban
+#   %1$s   Replaced with ban message
+#   %2$s   Replaced with name of player who was responsible for banning
+PermanentBan: "%1$s - %2$s\\n\\nThis ban is permanent ban."
+
+# Formatting for a temporary ban
+#   %1$s   Replaced with ban message
+#   %2$s   Replaced with name of player who was responsible for banning
+#   %3$s   Replaced with the remaining time
+TemporaryBan: "%1$s - %2$s\\n\\nThis ban is temporary and will expire in:\\n%3$s"
+
+# Used for debugging DeltaBans
+DebugMode: False
