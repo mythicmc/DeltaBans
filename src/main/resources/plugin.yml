@@ -2,6 +2,7 @@ name: DeltaBans
 main: com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin
 version: 1.0
 author: Trace Bachi (tracebachi@yahoo.com, BigBossZee)
+depend: [DeltaRedis]
 commands:
   ban:
     description: Allows the user to ban others and their IP.
