@@ -27,5 +27,7 @@ permissions:
     description: Main permission for banning and unbanning.
   DeltaRedis.CheckBan:
     description: Permission for checking bans.
+  DeltaRedis.CheckBan.Limited:
+    description: Permission for checking bans (only ban message and banner shown).
   DeltaRedis.SaveBans:
     description: Permission for forcing ban save.

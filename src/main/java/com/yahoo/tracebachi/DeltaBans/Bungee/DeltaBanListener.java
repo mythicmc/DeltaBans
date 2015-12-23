@@ -211,6 +211,7 @@ public class DeltaBanListener implements Listener
             String sender = in.readUTF();
             String argument = in.readUTF();
             boolean isName = in.readBoolean();
+            boolean includeIp = in.readBoolean();
             BanEntry entry;
 
             if(isName)
@@ -225,14 +226,23 @@ public class DeltaBanListener implements Listener
             if(entry == null)
             {
                 deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
-                    Prefixes.FAILURE + "Ban not found.");
+                    Prefixes.INFO + "Ban not found.");
+            }
+            else if(includeIp)
+            {
+                deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
+                    Prefixes.INFO + "Ban found\n" +
+                    Prefixes.INFO + "Name: " + ChatColor.WHITE + entry.getName() + "\n" +
+                    Prefixes.INFO + "IP: " + ChatColor.WHITE + entry.getIp() + "\n" +
+                    Prefixes.INFO + "Banner: " + ChatColor.WHITE + entry.getBanner() + "\n" +
+                    Prefixes.INFO + "Ban Message: " + ChatColor.WHITE + entry.getMessage() + "\n" +
+                    Prefixes.INFO + "Duration: " + ChatColor.WHITE + millisToString(entry.getDuration()));
             }
             else
             {
                 deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
-                    Prefixes.SUCCESS + "Ban found\n" +
+                    Prefixes.INFO + "Ban found\n" +
                     Prefixes.INFO + "Name: " + ChatColor.WHITE + entry.getName() + "\n" +
-                    Prefixes.INFO + "IP: " + ChatColor.WHITE + entry.getIp() + "\n" +
                     Prefixes.INFO + "Banner: " + ChatColor.WHITE + entry.getBanner() + "\n" +
                     Prefixes.INFO + "Ban Message: " + ChatColor.WHITE + entry.getMessage() + "\n" +
                     Prefixes.INFO + "Duration: " + ChatColor.WHITE + millisToString(entry.getDuration()));

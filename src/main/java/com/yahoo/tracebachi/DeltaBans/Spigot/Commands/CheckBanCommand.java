@@ -55,7 +55,9 @@ public class CheckBanCommand implements CommandExecutor
 
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
-        if(!sender.hasPermission("DeltaBans.CheckBan"))
+        boolean checkBan = sender.hasPermission("DeltaBans.CheckBan");
+        boolean checkBanLimited = sender.hasPermission("DeltaBans.CheckBan.Limited");
+        if(!checkBan && !checkBanLimited)
         {
             sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
             return true;
@@ -63,7 +65,14 @@ public class CheckBanCommand implements CommandExecutor
 
         if(args.length == 0)
         {
-            sender.sendMessage(Prefixes.INFO + "/checkban <name|ip>");
+            if(checkBan)
+            {
+                sender.sendMessage(Prefixes.INFO + "/checkban <name|ip>");
+            }
+            else
+            {
+                sender.sendMessage(Prefixes.INFO + "/checkban <name>");
+            }
             return true;
         }
 
@@ -71,17 +80,24 @@ public class CheckBanCommand implements CommandExecutor
         String argument = args[0];
         boolean isName = !IP_PATTERN.matcher(argument).matches();
 
-        String banAsMessage = buildCheckMessage(senderName, argument, isName);
+        if(!isName && !checkBan)
+        {
+            sender.sendMessage(Prefixes.FAILURE + "You are not allowed to check IP bans.");
+            return true;
+        }
+
+        String banAsMessage = buildCheckMessage(senderName, argument, isName, checkBan);
         deltaRedisApi.publish(Channels.BUNGEECORD, CHECK_BAN_CHANNEL, banAsMessage);
         return true;
     }
 
-    private String buildCheckMessage(String banner, String argument, boolean isName)
+    private String buildCheckMessage(String banner, String argument, boolean isName, boolean includeIp)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(banner);
         out.writeUTF(argument);
         out.writeBoolean(isName);
+        out.writeBoolean(includeIp);
 
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
