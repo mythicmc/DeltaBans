@@ -40,6 +40,7 @@ public class DeltaBansPlugin extends JavaPlugin
     private TempBanCommand tempBanCommand;
     private NameBanCommand nameBanCommand;
     private CheckBanCommand checkBanCommand;
+    private SaveBansCommand saveBansCommand;
     private DeltaBanListener banListener;
 
     private Connection connection;
@@ -83,14 +84,24 @@ public class DeltaBansPlugin extends JavaPlugin
 
         banCommand = new BanCommand(deltaRedisApi, this);
         getCommand("ban").setExecutor(banCommand);
-        unbanCommand = new UnbanCommand(deltaRedisApi, this);
-        getCommand("unban").setExecutor(unbanCommand);
+        getCommand("ban").setTabCompleter(banCommand);
+
         tempBanCommand = new TempBanCommand(deltaRedisApi, this);
         getCommand("tempban").setExecutor(tempBanCommand);
+        getCommand("tempban").setTabCompleter(tempBanCommand);
+
         nameBanCommand = new NameBanCommand(deltaRedisApi);
         getCommand("nameban").setExecutor(nameBanCommand);
+        getCommand("nameban").setTabCompleter(nameBanCommand);
+
+        unbanCommand = new UnbanCommand(deltaRedisApi);
+        getCommand("unban").setExecutor(unbanCommand);
+
         checkBanCommand = new CheckBanCommand(deltaRedisApi);
         getCommand("checkban").setExecutor(checkBanCommand);
+
+        saveBansCommand = new SaveBansCommand(deltaRedisApi);
+        getCommand("savebans").setExecutor(saveBansCommand);
 
         banListener = new DeltaBanListener();
         getServer().getPluginManager().registerEvents(banListener, this);
@@ -100,6 +111,12 @@ public class DeltaBansPlugin extends JavaPlugin
     public void onDisable()
     {
         banListener = null;
+
+        if(saveBansCommand != null)
+        {
+            saveBansCommand.shutdown();
+            saveBansCommand = null;
+        }
 
         if(checkBanCommand != null)
         {

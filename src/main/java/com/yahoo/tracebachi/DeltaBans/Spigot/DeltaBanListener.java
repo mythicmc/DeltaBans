@@ -17,6 +17,7 @@
 package com.yahoo.tracebachi.DeltaBans.Spigot;
 
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisMessageEvent;
+import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -30,18 +31,16 @@ import java.util.regex.Pattern;
 public class DeltaBanListener implements Listener
 {
     private static final Pattern pattern = Pattern.compile("/\\\\");
-    private static final String BAN_ANNOUNCE = "DB-Announce";
+    private static final String ANNOUNCE = "DB-Announce";
 
     @EventHandler
     public void onRedisMessage(DeltaRedisMessageEvent event)
     {
-        if(event.getChannel().equals(BAN_ANNOUNCE))
+        if(event.getChannel().equals(ANNOUNCE))
         {
-            String[] splitMessage = pattern.split(event.getMessage(), 2);
-
             for(Player player : Bukkit.getOnlinePlayers())
             {
-                player.sendMessage(Prefixes.INFO + splitMessage[1]);
+                player.sendMessage(Prefixes.INFO + event.getMessage());
             }
         }
     }

@@ -19,22 +19,24 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
-import com.yahoo.tracebachi.DeltaBans.Spigot.Prefixes;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
+import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
-public class BanCommand implements CommandExecutor
+public class BanCommand implements TabExecutor
 {
     public static final String BAN_CHANNEL = "DB-Ban";
     private static final Pattern IP_PATTERN = Pattern.compile(
@@ -59,6 +61,26 @@ public class BanCommand implements CommandExecutor
         this.plugin = null;
     }
 
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    {
+        List<String> result = new ArrayList<>();
+
+        if(args.length != 0)
+        {
+            String partial = args[args.length - 1].toLowerCase();
+            for(String name : deltaRedisApi.getCachedPlayers())
+            {
+                if(name.startsWith(partial))
+                {
+                    result.add(name);
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         if(!sender.hasPermission("DeltaBans.Ban"))
@@ -67,7 +89,7 @@ public class BanCommand implements CommandExecutor
             return true;
         }
 
-        if(args.length == 0)
+        if(args.length < 1)
         {
             sender.sendMessage(Prefixes.INFO + "/ban <name|ip> <message>");
             return true;

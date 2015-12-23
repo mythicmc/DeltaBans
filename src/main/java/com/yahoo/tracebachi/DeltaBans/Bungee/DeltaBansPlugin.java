@@ -36,6 +36,7 @@ public class DeltaBansPlugin extends Plugin
     private Configuration config;
     private BanStorage banStorage;
     private DeltaBanListener banListener;
+    private final Object banSaveLock = new Object();
 
     @Override
     public void onLoad()
@@ -67,7 +68,7 @@ public class DeltaBansPlugin extends Plugin
         DeltaRedisApi deltaRedisApi = deltaRedisPlugin.getDeltaRedisApi();
 
         banListener = new DeltaBanListener(permanentBanFormat, temporaryBanFormat,
-            deltaRedisApi, banStorage);
+            deltaRedisApi, banStorage, this);
         getProxy().getPluginManager().registerListener(this, banListener);
 
         getProxy().getScheduler().schedule(this, this::writeBans,
@@ -93,6 +94,30 @@ public class DeltaBansPlugin extends Plugin
         }
     }
 
+    public boolean writeBans()
+    {
+        getLogger().info("Saving bans ...");
+
+        File file = new File(getDataFolder(), "bans.json");
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonArray array = banStorage.toJson();
+
+        synchronized(banSaveLock)
+        {
+            try(BufferedWriter writer = new BufferedWriter(new FileWriter(file)))
+            {
+                gson.toJson(array, writer);
+                getLogger().info("Done saving bans.");
+                return true;
+            }
+            catch(IOException e)
+            {
+                e.printStackTrace();
+                return false;
+            }
+        }
+    }
+
     private void readBans()
     {
         File file = new File(getDataFolder(), "bans.json");
@@ -115,24 +140,6 @@ public class DeltaBansPlugin extends Plugin
             {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private void writeBans()
-    {
-        getLogger().info("Saving bans ...");
-
-        File file = new File(getDataFolder(), "bans.json");
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonArray array = banStorage.toJson();
-
-        try(BufferedWriter writer = new BufferedWriter(new FileWriter(file)))
-        {
-            gson.toJson(array, writer);
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
         }
     }
 }

@@ -128,7 +128,7 @@ public class BanEntry
             name == null ? null : name.getAsString(),
             ip == null ? null : ip.getAsString(),
             banner.getAsString(),
-            message == null ? null : message.getAsString(),
+            message == null ? "Unspecified Reason" : message.getAsString(),
             duration == null ? null : duration.getAsLong(),
             createdAt.getAsLong()
         );

@@ -18,10 +18,9 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
-import com.yahoo.tracebachi.DeltaBans.Spigot.Prefixes;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
+import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -43,18 +42,15 @@ public class UnbanCommand implements CommandExecutor
     );
 
     private DeltaRedisApi deltaRedisApi;
-    private DeltaBansPlugin plugin;
 
-    public UnbanCommand(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
+    public UnbanCommand(DeltaRedisApi deltaRedisApi)
     {
         this.deltaRedisApi = deltaRedisApi;
-        this.plugin = plugin;
     }
 
     public void shutdown()
     {
         this.deltaRedisApi = null;
-        this.plugin = null;
     }
 
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)

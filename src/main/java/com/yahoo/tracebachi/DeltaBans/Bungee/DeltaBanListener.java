@@ -41,25 +41,29 @@ public class DeltaBanListener implements Listener
     private static final String UNBAN_CHANNEL = "DB-Unban";
     private static final String NAME_BAN_CHANNEL = "DB-NameBan";
     private static final String CHECK_BAN_CHANNEL = "DB-CheckBan";
-    private static final String BAN_ANNOUNCE = "DB-Announce";
+    private static final String SAVE_BANS_CHANNEL = "DB-SaveBans";
+    private static final String ANNOUNCE = "DB-Announce";
 
     private String permanentBanFormat;
     private String temporaryBanFormat;
     private BanStorage storage;
     private DeltaRedisApi deltaRedisApi;
+    private DeltaBansPlugin plugin;
 
     public DeltaBanListener(String permanentBanFormat, String temporaryBanFormat,
-        DeltaRedisApi deltaRedisApi, BanStorage storage)
+        DeltaRedisApi deltaRedisApi, BanStorage storage, DeltaBansPlugin plugin)
     {
         this.permanentBanFormat = permanentBanFormat;
         this.temporaryBanFormat = temporaryBanFormat;
         this.storage = storage;
         this.deltaRedisApi = deltaRedisApi;
+        this.plugin = plugin;
     }
 
     public void shutdown()
     {
         this.storage = null;
+        this.deltaRedisApi = null;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -146,9 +150,9 @@ public class DeltaBanListener implements Listener
                     kickByIp(ip, getKickMessage(entry));
                 }
 
-                String announcement = formatBanAnnouncement(banner, name, hasName, banMessage);
-                deltaRedisApi.publish(event.getSender(), BAN_ANNOUNCE,
-                    banner + "/\\" + announcement);
+                String announcement = formatBanAnnouncement(banner, name, hasName,
+                    banMessage, entry.hasDuration());
+                deltaRedisApi.publish(event.getSender(), ANNOUNCE, announcement);
             }
         }
         else if(channel.equals(UNBAN_CHANNEL))
@@ -175,8 +179,7 @@ public class DeltaBanListener implements Listener
             else
             {
                 String announcement = formatUnbanAnnouncement(sender, banee, isName);
-                deltaRedisApi.publish(event.getSender(), BAN_ANNOUNCE,
-                    sender + "/\\" + announcement);
+                deltaRedisApi.publish(event.getSender(), ANNOUNCE, announcement);
             }
         }
         else if(channel.equals(NAME_BAN_CHANNEL))
@@ -199,9 +202,8 @@ public class DeltaBanListener implements Listener
                 // Kick player off the proxy
                 kickByName(name, getKickMessage(entry));
 
-                String announcement = formatBanAnnouncement(banner, name, true, banMessage);
-                deltaRedisApi.publish(event.getSender(), BAN_ANNOUNCE,
-                    banner + "/\\" + announcement);
+                String announcement = formatBanAnnouncement(banner, name, true, banMessage, false);
+                deltaRedisApi.publish(event.getSender(), ANNOUNCE, announcement);
             }
         }
         else if(channel.equals(CHECK_BAN_CHANNEL))
@@ -232,8 +234,22 @@ public class DeltaBanListener implements Listener
                     Prefixes.INFO + "Name: " + ChatColor.WHITE + entry.getName() + "\n" +
                     Prefixes.INFO + "IP: " + ChatColor.WHITE + entry.getIp() + "\n" +
                     Prefixes.INFO + "Banner: " + ChatColor.WHITE + entry.getBanner() + "\n" +
-                    Prefixes.INFO + "Ban Message:" + ChatColor.WHITE + entry.getMessage() + "\n" +
-                    Prefixes.INFO + "Duration: " + ChatColor.WHITE + entry.getDuration());
+                    Prefixes.INFO + "Ban Message: " + ChatColor.WHITE + entry.getMessage() + "\n" +
+                    Prefixes.INFO + "Duration: " + ChatColor.WHITE + millisToString(entry.getDuration()));
+            }
+        }
+        else if(channel.equals(SAVE_BANS_CHANNEL))
+        {
+            String sender = event.getMessage();
+            if(plugin.writeBans())
+            {
+                deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
+                    Prefixes.SUCCESS + "Ban file saved.");
+            }
+            else
+            {
+                deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
+                    Prefixes.FAILURE + "Error saving ban file. More details in the BungeeCord console.");
             }
         }
     }
@@ -258,14 +274,15 @@ public class DeltaBanListener implements Listener
         }
     }
 
-    private String formatBanAnnouncement(String banner, String banee, boolean isName, String message)
+    private String formatBanAnnouncement(String banner, String banee, boolean isName,
+        String message, boolean isTemporary)
     {
         if(!isName)
         {
             banee = "255.255.255.255";
         }
         return ChatColor.GOLD + banner +
-            ChatColor.WHITE + " banned " +
+            ChatColor.WHITE + ((isTemporary) ? " temp-banned " : " banned ") +
             ChatColor.GOLD + banee +
             ChatColor.WHITE + " for " +
             ChatColor.GOLD + message;
@@ -290,7 +307,7 @@ public class DeltaBanListener implements Listener
             long remainingTime = entry.getCreatedAt() + entry.getDuration()
                 - System.currentTimeMillis();
             result = String.format(temporaryBanFormat, entry.getMessage(),
-                entry.getBanner(), secondsToString(remainingTime));
+                entry.getBanner(), millisToString(remainingTime));
         }
         else
         {
@@ -301,8 +318,13 @@ public class DeltaBanListener implements Listener
         return ChatColor.translateAlternateColorCodes('&', result);
     }
 
-    private String secondsToString(long input)
+    private String millisToString(Long input)
     {
+        if(input == null)
+        {
+            return "FOREVER!";
+        }
+
         long inputSeconds = input / 1000;
         long days = (inputSeconds / (24 * 60 * 60));
         long hours = (inputSeconds / (60 * 60)) % 24;
