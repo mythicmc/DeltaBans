@@ -28,7 +28,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -64,20 +63,12 @@ public class BanCommand implements TabExecutor
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
     {
-        List<String> result = new ArrayList<>();
-
         if(args.length != 0)
         {
-            String partial = args[args.length - 1].toLowerCase();
-            for(String name : deltaRedisApi.getCachedPlayers())
-            {
-                if(name.startsWith(partial))
-                {
-                    result.add(name);
-                }
-            }
+            String lastArg = args[args.length - 1];
+            return deltaRedisApi.matchStartOfName(lastArg);
         }
-        return result;
+        return null;
     }
 
     @Override

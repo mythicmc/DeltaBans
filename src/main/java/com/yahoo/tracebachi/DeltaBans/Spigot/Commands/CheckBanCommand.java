@@ -55,9 +55,10 @@ public class CheckBanCommand implements CommandExecutor
 
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
-        boolean checkBan = sender.hasPermission("DeltaBans.CheckBan");
+        boolean checkBanFull = sender.hasPermission("DeltaBans.CheckBan.Full");
         boolean checkBanLimited = sender.hasPermission("DeltaBans.CheckBan.Limited");
-        if(!checkBan && !checkBanLimited)
+
+        if(!checkBanFull && !checkBanLimited)
         {
             sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
             return true;
@@ -65,7 +66,7 @@ public class CheckBanCommand implements CommandExecutor
 
         if(args.length == 0)
         {
-            if(checkBan)
+            if(checkBanFull)
             {
                 sender.sendMessage(Prefixes.INFO + "/checkban <name|ip>");
             }
@@ -80,13 +81,13 @@ public class CheckBanCommand implements CommandExecutor
         String argument = args[0];
         boolean isName = !IP_PATTERN.matcher(argument).matches();
 
-        if(!isName && !checkBan)
+        if(!isName && !checkBanFull)
         {
             sender.sendMessage(Prefixes.FAILURE + "You are not allowed to check IP bans.");
             return true;
         }
 
-        String banAsMessage = buildCheckMessage(senderName, argument, isName, checkBan);
+        String banAsMessage = buildCheckMessage(senderName, argument, isName, checkBanFull);
         deltaRedisApi.publish(Channels.BUNGEECORD, CHECK_BAN_CHANNEL, banAsMessage);
         return true;
     }
