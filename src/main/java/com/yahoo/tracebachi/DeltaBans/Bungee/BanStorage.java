@@ -19,8 +19,10 @@ package com.yahoo.tracebachi.DeltaBans.Bungee;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonArray;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
@@ -29,7 +31,7 @@ public class BanStorage
 {
     private HashSet<BanEntry> banSet = new HashSet<>();
     private HashMap<String, BanEntry> nameMap = new HashMap<>();
-    private HashMap<String, BanEntry> ipMap = new HashMap<>();
+    private HashMap<String, Set<BanEntry>> ipMap = new HashMap<>();
 
     public synchronized void add(BanEntry ban)
     {
@@ -44,31 +46,43 @@ public class BanStorage
 
         if(ban.hasIp())
         {
-            ipMap.put(ban.getIp(), ban);
+            Set<BanEntry> bansOnIp = ipMap.get(ban.getIp());
+
+            if(bansOnIp == null)
+            {
+                bansOnIp = new HashSet<>();
+                ipMap.put(ban.getIp(), bansOnIp);
+            }
+
+            bansOnIp.add(ban);
         }
     }
 
-    public synchronized BanEntry removeUsingIp(String ip)
+    public synchronized Set<BanEntry> removeUsingIp(String ip)
     {
         Preconditions.checkNotNull(ip, "IP cannot be null.");
 
         // Remove from the IP map
-        BanEntry entryToRemove = ipMap.remove(ip);
+        Set<BanEntry> entriesToRemove = ipMap.remove(ip);
 
-        if(entryToRemove != null)
+        if(entriesToRemove != null)
         {
-            // Remove from the name map if it has a name
-            if(entryToRemove.hasName())
+            // Loop through every ban associated with the IP
+            for(BanEntry entry : entriesToRemove)
             {
-                nameMap.remove(entryToRemove.getName());
-            }
+                // Remove from the name map if it has a name
+                if(entry.hasName())
+                {
+                    nameMap.remove(entry.getName());
+                }
 
-            // Remove from the general ban set
-            // Comparison is based on memory address, which is the desired behavior
-            banSet.remove(entryToRemove);
+                // Remove from the general ban set
+                // Comparison is based on memory address, which is the desired behavior
+                banSet.remove(entry);
+            }
         }
 
-        return entryToRemove;
+        return entriesToRemove;
     }
 
     public synchronized BanEntry removeUsingName(String name)
@@ -76,14 +90,20 @@ public class BanStorage
         Preconditions.checkNotNull(name, "Name cannot be null.");
 
         // Remove from the name map
+        name = name.toLowerCase();
         BanEntry entryToRemove = nameMap.remove(name);
 
         if(entryToRemove != null)
         {
-            // Remove from the name map if it has an IP
+            // Remove from the ip map if it has an IP
             if(entryToRemove.hasIp())
             {
-                ipMap.remove(entryToRemove.getIp());
+                Set<BanEntry> bansOnIp = ipMap.getOrDefault(
+                    entryToRemove.getIp(), Collections.emptySet());
+
+                // Remove from the ip ban set
+                // Comparison is based on memory address, which is the desired behavior
+                bansOnIp.remove(entryToRemove);
             }
 
             // Remove from the general ban set
@@ -99,19 +119,19 @@ public class BanStorage
         return ipMap.containsKey(ip);
     }
 
-    public synchronized BanEntry getIpBanEntry(String ip)
+    public synchronized Set<BanEntry> getIpBanEntries(String ip)
     {
-        return ipMap.get(ip);
+        return ipMap.getOrDefault(ip, Collections.emptySet());
     }
 
     public synchronized boolean isNameBanned(String name)
     {
-        return nameMap.containsKey(name);
+        return nameMap.containsKey(name.toLowerCase());
     }
 
     public synchronized BanEntry getNameBanEntry(String name)
     {
-        return nameMap.get(name);
+        return nameMap.get(name.toLowerCase());
     }
 
     public synchronized JsonArray toJson()

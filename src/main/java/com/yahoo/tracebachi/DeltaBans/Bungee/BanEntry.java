@@ -48,7 +48,7 @@ public class BanEntry
             duration = null;
         }
 
-        this.name = name;
+        this.name = (name == null) ? null : name.toLowerCase();
         this.ip = ip;
         this.banner = banner;
         this.message = message;
@@ -121,7 +121,8 @@ public class BanEntry
 
         if((name == null && ip == null) || banner == null || createdAt == null)
         {
-            throw new IllegalArgumentException("Ban object is not properly formatted.");
+            throw new IllegalArgumentException("Ban is not properly formatted:\n" +
+                object.toString());
         }
 
         return new BanEntry(

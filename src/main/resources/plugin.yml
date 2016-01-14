@@ -1,33 +1,53 @@
 name: DeltaBans
 main: com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin
-version: 1.1
+version: 1.2
 author: Trace Bachi (tracebachi@yahoo.com, BigBossZee)
 depend: [DeltaRedis, xAuth]
 commands:
   ban:
     description: Allows the user to ban others and their IP.
-    aliases: [dban]
+    aliases: [deban]
   unban:
     description: Allows the user to unban others.
-    aliases: [dunban]
+    aliases: [deunban]
   tempban:
     description: Allows the user to ban others for a duration.
-    aliases: [dtempban]
+    aliases: [detempban]
   nameban:
     description: Allows the user to ban names instead of IPs.
-    aliases: [dnameban]
+    aliases: [denameban]
   checkban:
     description: Allows the user to check if names or IPs are banned.
-    aliases: [dcheckban]
+    aliases: [decheckban]
+  warn:
+    description: Allows the user to issue warnings.
+    aliases: [dewarn]
+  pardon:
+    description: Allows the user to pardon a single warning.
+    aliases: [depardon]
+  pardonall:
+    description: Allows the user to pardon all warnings.
+    aliases: [depardonall]
+  checkwarn:
+    description: Allows the user to check warnings.
+    aliases: [decheckwarn]
   savebans:
-    description: Allows the user to force a ban file save.
+    description: Allows the user to force save ban and warning files.
 
 permissions:
-  DeltaRedis.Ban:
+  DeltaBans.Ban:
     description: Main permission for banning and unbanning.
-  DeltaRedis.CheckBan:
+  DeltaBans.CheckBan:
     description: Permission for checking bans.
-  DeltaRedis.CheckBan.Limited:
+  DeltaBans.CheckBan.Limited:
     description: Permission for checking bans (only ban message and banner shown).
-  DeltaRedis.SaveBans:
-    description: Permission for forcing ban save.
+  DeltaBans.Warn:
+    description: Permission for issuing warnings.
+  DeltaBans.Pardon.All:
+    description: Permission for pardoning all warnings.
+  DeltaBans.Pardon.One:
+    description: Permission for pardoning one warning.
+  DeltaBans.CheckWarn:
+    description: Permission for checking warnings.
+  DeltaBans.Save:
+    description: Permission for forcing save of ban and warning files.

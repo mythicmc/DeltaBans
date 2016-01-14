@@ -2,19 +2,26 @@
 
 # MySQL connection information
 Database:
-
-  # Username and password for connecting to the database.
+  # Username for connecting to the database.
   Username: mc
+  # Password for connecting to the database.
   Password: mc
-
   # This should have three parts: the main URL, the port number, and database name.
   URL: localhost:5432/mc18
 
-# xAuth table information
-xAuth:
+# Database table used by xAuth to save account information
+xAuth-AccountsTable: accounts
 
-  # Table used by xAuth to save account information
-  AccountsTable: accounts
+# Commands to run on a specific number of warnings
+# {name} Name of the player that was warned
+# {message} Message that was sent as part of the warning
+WarningCommands:
+  1:
+  - 'tell {name} {message}'
+  2:
+  - 'kick {name} {message}'
+  3:
+  - 'tempban {name} 1m {message}'
 
 # Used for debugging DeltaBans
 DebugMode: False

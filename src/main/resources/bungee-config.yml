@@ -1,7 +1,13 @@
 # DeltaBans Configuration File
 
-# Delay between every save of all the bans to bans.json
+# Delay between every save of bans.json and warnings.json
 MinutesPerBanSave: 10
+
+# Delay between removing old warnings
+MinutesPerWarningCleanup: 120
+
+# Duration of warnings in minutes (10080 = 1 week)
+WarningDuration: 10080
 
 # Formatting for a permanent ban
 #   %1$s   Replaced with ban message

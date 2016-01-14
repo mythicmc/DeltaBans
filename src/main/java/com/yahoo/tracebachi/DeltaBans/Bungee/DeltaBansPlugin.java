@@ -35,8 +35,10 @@ public class DeltaBansPlugin extends Plugin
 {
     private Configuration config;
     private BanStorage banStorage;
-    private DeltaBanListener banListener;
-    private final Object banSaveLock = new Object();
+    private BanListener banListener;
+    private WarningStorage warningStorage;
+    private WarningListener warningListener;
+    private final Object saveLock = new Object();
 
     @Override
     public void onLoad()
@@ -57,28 +59,42 @@ public class DeltaBansPlugin extends Plugin
     @Override
     public void onEnable()
     {
-        String permanentBanFormat = config.getString("PermanentBan");
-        String temporaryBanFormat = config.getString("TemporaryBan");
         int minutesPerBanSave = config.getInt("MinutesPerBanSave");
+        int minutesPerWarningCleanup = config.getInt("MinutesPerWarningCleanup");
+        int warningDuration = config.getInt("WarningDuration");
 
         banStorage = new BanStorage();
         readBans();
+        warningStorage = new WarningStorage();
+        readWarnings();
 
-        DeltaRedisPlugin deltaRedisPlugin = (DeltaRedisPlugin) getProxy().getPluginManager().getPlugin("DeltaRedis");
+        DeltaRedisPlugin deltaRedisPlugin = (DeltaRedisPlugin) getProxy()
+            .getPluginManager().getPlugin("DeltaRedis");
         DeltaRedisApi deltaRedisApi = deltaRedisPlugin.getDeltaRedisApi();
 
-        banListener = new DeltaBanListener(permanentBanFormat, temporaryBanFormat,
-            deltaRedisApi, banStorage, this);
+        banListener = new BanListener(deltaRedisApi, this);
         getProxy().getPluginManager().registerListener(this, banListener);
+        warningListener = new WarningListener(deltaRedisApi, warningStorage);
+        getProxy().getPluginManager().registerListener(this, warningListener);
 
-        getProxy().getScheduler().schedule(this, this::writeBans,
+        getProxy().getScheduler().schedule(this, this::writeBansAndWarnings,
             minutesPerBanSave, minutesPerBanSave, TimeUnit.MINUTES);
+        getProxy().getScheduler().schedule(this, () ->
+            warningStorage.cleanupWarnings(warningDuration),
+            minutesPerWarningCleanup, minutesPerWarningCleanup, TimeUnit.MINUTES);
     }
 
     @Override
     public void onDisable()
     {
         getProxy().getScheduler().cancel(this);
+
+        if(warningListener != null)
+        {
+            getProxy().getPluginManager().unregisterListener(warningListener);
+            warningListener.shutdown();
+            warningListener = null;
+        }
 
         if(banListener != null)
         {
@@ -87,34 +103,68 @@ public class DeltaBansPlugin extends Plugin
             banListener = null;
         }
 
-        if(banStorage != null)
+        if(banStorage != null && warningStorage != null)
         {
-            writeBans();
+            writeBansAndWarnings();
             banStorage = null;
         }
     }
 
-    public boolean writeBans()
+    public String getPermanentBanFormat()
     {
-        getLogger().info("Saving bans ...");
+        return (config != null) ? config.getString("PermanentBan") : "BAD_CONFIG";
+    }
 
-        File file = new File(getDataFolder(), "bans.json");
+    public String getTemporaryBanFormat()
+    {
+        return (config != null) ? config.getString("TemporaryBan") : "BAD_CONFIG";
+    }
+
+    public BanStorage getBanStorage()
+    {
+        return banStorage;
+    }
+
+    public WarningStorage getWarningStorage()
+    {
+        return warningStorage;
+    }
+
+    public boolean writeBansAndWarnings()
+    {
+        getLogger().info("Saving bans and warnings ...");
+
+        File banFile = new File(getDataFolder(), "bans.json");
+        File warningFile = new File(getDataFolder(), "warnings.json");
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonArray array = banStorage.toJson();
+        JsonArray banArray = banStorage.toJson();
+        JsonArray warningArray = warningStorage.toJson();
 
-        synchronized(banSaveLock)
+        synchronized(saveLock)
         {
-            try(BufferedWriter writer = new BufferedWriter(new FileWriter(file)))
+            try(BufferedWriter writer = new BufferedWriter(new FileWriter(banFile)))
             {
-                gson.toJson(array, writer);
+                gson.toJson(banArray, writer);
                 getLogger().info("Done saving bans.");
-                return true;
             }
             catch(IOException e)
             {
                 e.printStackTrace();
                 return false;
             }
+
+            try(BufferedWriter writer = new BufferedWriter(new FileWriter(warningFile)))
+            {
+                gson.toJson(warningArray, writer);
+                getLogger().info("Done saving warnings.");
+            }
+            catch(IOException e)
+            {
+                e.printStackTrace();
+                return false;
+            }
+
+            return true;
         }
     }
 
@@ -122,24 +172,67 @@ public class DeltaBansPlugin extends Plugin
     {
         File file = new File(getDataFolder(), "bans.json");
 
-        if(file.exists())
+        if(!file.exists()) { return; }
+
+        JsonParser parser = new JsonParser();
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
-            JsonParser parser = new JsonParser();
+            JsonArray array = parser.parse(reader).getAsJsonArray();
 
-            try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+            for(JsonElement element : array)
             {
-                JsonArray array = parser.parse(reader).getAsJsonArray();
-
-                for(JsonElement element : array)
+                try
                 {
                     BanEntry entry = BanEntry.fromJson(element.getAsJsonObject());
                     banStorage.add(entry);
                 }
+                catch(IllegalArgumentException ex)
+                {
+                    ex.printStackTrace();
+                }
             }
-            catch(IOException e)
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private void readWarnings()
+    {
+        File file = new File(getDataFolder(), "warnings.json");
+
+        if(!file.exists()) { return; }
+
+        JsonParser parser = new JsonParser();
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            JsonArray array = parser.parse(reader).getAsJsonArray();
+
+            for(JsonElement element : array)
             {
-                e.printStackTrace();
+                try
+                {
+                    JsonObject object = element.getAsJsonObject();
+                    String name = object.get("name").getAsString();
+
+                    for(JsonElement warning : object.get("warnings").getAsJsonArray())
+                    {
+                        JsonObject warningObject = warning.getAsJsonObject();
+                        warningStorage.add(name, WarningEntry.fromJson(warningObject));
+                    }
+                }
+                catch(IllegalArgumentException ex)
+                {
+                    ex.printStackTrace();
+                }
             }
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
         }
     }
 }

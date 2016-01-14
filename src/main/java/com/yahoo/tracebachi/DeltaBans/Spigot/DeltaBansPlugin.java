@@ -40,19 +40,18 @@ public class DeltaBansPlugin extends JavaPlugin
     private TempBanCommand tempBanCommand;
     private NameBanCommand nameBanCommand;
     private CheckBanCommand checkBanCommand;
+    private WarnCommand warnCommand;
+    private PardonWarnCommand pardonWarnCommand;
+    private CheckWarnCommand checkWarnCommand;
     private SaveBansCommand saveBansCommand;
-    private DeltaBanListener banListener;
+    private DeltaBansListener deltaBansListener;
 
     private Connection connection;
 
     @Override
     public void onLoad()
     {
-        File file = new File(getDataFolder(), "config.yml");
-        if(!file.exists())
-        {
-            saveDefaultConfig();
-        }
+        saveDefaultConfig();
     }
 
     @Override
@@ -63,7 +62,7 @@ public class DeltaBansPlugin extends JavaPlugin
         username = getConfig().getString("Database.Username");
         password = getConfig().getString("Database.Password");
         url = getConfig().getString("Database.URL");
-        accountTable = getConfig().getString("xAuth.AccountsTable");
+        accountTable = getConfig().getString("xAuth-AccountsTable");
 
         DeltaRedisPlugin plugin = (DeltaRedisPlugin) getServer().getPluginManager().getPlugin("DeltaRedis");
         DeltaRedisApi deltaRedisApi = plugin.getDeltaRedisApi();
@@ -81,6 +80,9 @@ public class DeltaBansPlugin extends JavaPlugin
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        deltaBansListener = new DeltaBansListener(this);
+        getServer().getPluginManager().registerEvents(deltaBansListener, this);
 
         banCommand = new BanCommand(deltaRedisApi, this);
         getCommand("ban").setExecutor(banCommand);
@@ -100,22 +102,51 @@ public class DeltaBansPlugin extends JavaPlugin
         checkBanCommand = new CheckBanCommand(deltaRedisApi);
         getCommand("checkban").setExecutor(checkBanCommand);
 
+        warnCommand = new WarnCommand(deltaBansListener, deltaRedisApi);
+        getCommand("warn").setExecutor(warnCommand);
+        getCommand("warn").setTabCompleter(warnCommand);
+
+        pardonWarnCommand = new PardonWarnCommand(deltaRedisApi);
+        getCommand("pardon").setExecutor(pardonWarnCommand);
+        getCommand("pardonall").setExecutor(pardonWarnCommand);
+        getCommand("pardon").setTabCompleter(pardonWarnCommand);
+        getCommand("pardonall").setTabCompleter(pardonWarnCommand);
+
+        checkWarnCommand = new CheckWarnCommand(deltaRedisApi);
+        getCommand("checkwarn").setExecutor(checkWarnCommand);
+        getCommand("checkwarn").setTabCompleter(checkWarnCommand);
+
         saveBansCommand = new SaveBansCommand(deltaRedisApi);
         getCommand("savebans").setExecutor(saveBansCommand);
-
-        banListener = new DeltaBanListener();
-        getServer().getPluginManager().registerEvents(banListener, this);
     }
 
     @Override
     public void onDisable()
     {
-        banListener = null;
+        deltaBansListener = null;
 
         if(saveBansCommand != null)
         {
             saveBansCommand.shutdown();
             saveBansCommand = null;
+        }
+
+        if(checkWarnCommand != null)
+        {
+            checkWarnCommand.shutdown();
+            checkWarnCommand = null;
+        }
+
+        if(pardonWarnCommand != null)
+        {
+            pardonWarnCommand.shutdown();
+            pardonWarnCommand = null;
+        }
+
+        if(warnCommand != null)
+        {
+            warnCommand.shutdown();
+            warnCommand = null;
         }
 
         if(checkBanCommand != null)
