@@ -39,6 +39,7 @@ public class DeltaBansPlugin extends JavaPlugin
     private NameBanCommand nameBanCommand;
     private RangeBanCommand rangeBanCommand;
     private RangeUnbanCommand rangeUnbanCommand;
+    private RangeWhitelistCommand rangeWhitelistCommand;
     private SaveCommand saveCommand;
     private TempBanCommand tempBanCommand;
     private UnbanCommand unbanCommand;
@@ -103,6 +104,9 @@ public class DeltaBansPlugin extends JavaPlugin
         rangeUnbanCommand = new RangeUnbanCommand(deltaRedisApi, this);
         rangeUnbanCommand.register();
 
+        rangeWhitelistCommand = new RangeWhitelistCommand(deltaRedisApi, this);
+        rangeWhitelistCommand.register();
+
         saveCommand = new SaveCommand(deltaRedisApi, this);
         saveCommand.register();
 
@@ -158,6 +162,12 @@ public class DeltaBansPlugin extends JavaPlugin
         {
             rangeUnbanCommand.shutdown();
             rangeUnbanCommand = null;
+        }
+
+        if(rangeWhitelistCommand != null)
+        {
+            rangeWhitelistCommand.shutdown();
+            rangeWhitelistCommand = null;
         }
 
         if(rangeBanCommand != null)

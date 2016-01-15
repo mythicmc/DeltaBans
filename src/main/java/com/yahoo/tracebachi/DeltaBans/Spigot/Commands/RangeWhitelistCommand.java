@@ -32,13 +32,13 @@ import java.nio.charset.StandardCharsets;
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
-public class RangeUnbanCommand extends DeltaBansCommand
+public class RangeWhitelistCommand extends DeltaBansCommand
 {
     private DeltaRedisApi deltaRedisApi;
 
-    public RangeUnbanCommand( DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
+    public RangeWhitelistCommand(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
-        super("rangeunban", "DeltaBans.RangeBan", plugin);
+        super("rangewhitelist", "DeltaBans.RangeBan", plugin);
         this.deltaRedisApi = deltaRedisApi;
     }
 
@@ -57,31 +57,37 @@ public class RangeUnbanCommand extends DeltaBansCommand
             args = DeltaBansUtils.filterSilent(args);
         }
 
-        if(args.length < 1)
+        if(args.length < 2)
         {
-            sender.sendMessage(Prefixes.INFO + "/rangeunban <ip>");
+            sender.sendMessage(Prefixes.INFO + "/rangewhitelist <add|remove> <name>");
             return;
         }
 
-        String banner = sender.getName();
-        String ip = args[0];
+        String nameToUpdate = args[1];
 
-        if(!DeltaBansUtils.isIp(ip))
+        if(args[0].equalsIgnoreCase("add"))
         {
-            sender.sendMessage(Prefixes.FAILURE + Prefixes.input(ip) + " is not a valid IP.");
+            String channelMessage = buildChannelMessage(sender.getName(), nameToUpdate, true);
+            deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.RANGE_WHITELIST, channelMessage);
+        }
+        else if(args[0].equalsIgnoreCase("remove"))
+        {
+            String channelMessage = buildChannelMessage(sender.getName(), nameToUpdate, false);
+            deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.RANGE_WHITELIST, channelMessage);
+        }
+        else
+        {
+            sender.sendMessage(Prefixes.INFO + "/rangewhitelist <add|remove> <name>");
             return;
         }
-
-        String channelMessage = buildChannelMessage(banner, ip, isSilent);
-            deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.RANGE_UNBAN, channelMessage);
     }
 
-    private String buildChannelMessage(String name, String ip, boolean isSilent)
+    private String buildChannelMessage(String senderName, String nameToUpdate, boolean isAdd)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(name);
-        out.writeUTF(ip);
-        out.writeBoolean(isSilent);
+        out.writeUTF(senderName);
+        out.writeUTF(nameToUpdate);
+        out.writeBoolean(isAdd);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

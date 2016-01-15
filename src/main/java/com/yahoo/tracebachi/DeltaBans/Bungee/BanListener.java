@@ -54,6 +54,7 @@ public class BanListener implements Listener
     private String rangeBanFormat;
     private BanStorage banStorage;
     private RangeBanStorage rangeBanStorage;
+    private Set<String> rangeBanWhitelist;
     private DeltaRedisApi deltaRedisApi;
 
     public BanListener(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
@@ -63,6 +64,7 @@ public class BanListener implements Listener
         this.rangeBanFormat = plugin.getRangeBanFormat();
         this.banStorage = plugin.getBanStorage();
         this.rangeBanStorage = plugin.getRangeBanStorage();
+        this.rangeBanWhitelist = plugin.getRangeBanWhitelist();
         this.deltaRedisApi = deltaRedisApi;
     }
 
@@ -70,6 +72,7 @@ public class BanListener implements Listener
     {
         this.permanentBanFormat = null;
         this.temporaryBanFormat = null;
+        this.rangeBanWhitelist = null;
         this.rangeBanFormat = null;
         this.banStorage = null;
         this.rangeBanStorage = null;
@@ -87,9 +90,12 @@ public class BanListener implements Listener
 
         if(rangeBanEntry != null)
         {
-            event.setCancelReason(getKickMessage(rangeBanEntry));
-            event.setCancelled(true);
-            return;
+            if(!rangeBanWhitelist.contains(playerName.toLowerCase()))
+            {
+                event.setCancelReason(getKickMessage(rangeBanEntry));
+                event.setCancelled(true);
+                return;
+            }
         }
 
         BanEntry nameEntry = banStorage.getNameBanEntry(playerName);
@@ -258,6 +264,18 @@ public class BanListener implements Listener
             RangeBanEntry entry = new RangeBanEntry(banner, message, start, end);
             rangeBanStorage.add(entry);
 
+            BaseComponent[] kickMessage = TextComponent.fromLegacyText(getKickMessage(entry));
+            for(ProxiedPlayer player : BungeeCord.getInstance().getPlayers())
+            {
+                long ipAsLong = DeltaBansUtils.convertIpToLong(
+                    player.getAddress().getAddress().getHostAddress());
+
+                if(ipAsLong >= entry.getStartAddressLong() && ipAsLong <= entry.getEndAddressLong())
+                {
+                    player.disconnect(kickMessage.clone());
+                }
+            }
+
             String announcement = formatRangeBanAnnouncement(banner, start + "-" + end, message, isSilent);
             deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
         }
@@ -270,6 +288,25 @@ public class BanListener implements Listener
 
             String announcement = formatRangeUnbanAnnouncement(banner, ip, count, isSilent);
             deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+        }
+        else if(channel.equals(DeltaBansChannels.RANGE_WHITELIST))
+        {
+            String senderName = in.readUTF();
+            String nameToUpdate = in.readUTF();
+            boolean isAdd = in.readBoolean();
+
+            if(isAdd)
+            {
+                rangeBanWhitelist.add(nameToUpdate.toLowerCase());
+                deltaRedisApi.sendMessageToPlayer(event.getSender(), senderName,
+                    Prefixes.SUCCESS + Prefixes.input(nameToUpdate) + " added to range whitelist.");
+            }
+            else
+            {
+                rangeBanWhitelist.remove(nameToUpdate.toLowerCase());
+                deltaRedisApi.sendMessageToPlayer(event.getSender(), senderName,
+                    Prefixes.SUCCESS + Prefixes.input(nameToUpdate) + " removed from range whitelist.");
+            }
         }
     }
 

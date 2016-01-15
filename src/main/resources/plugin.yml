@@ -6,28 +6,33 @@ depend: [DeltaRedis, xAuth]
 commands:
   ban:
     description: Allows the user to ban others and their IP.
-    aliases: [deban]
+    aliases: [dbban]
   unban:
     description: Allows the user to unban others.
-    aliases: [deunban]
+    aliases: [dbunban]
   tempban:
     description: Allows the user to ban others for a duration.
-    aliases: [detempban]
+    aliases: [dbtempban]
   nameban:
     description: Allows the user to ban names instead of IPs.
-    aliases: [denameban]
+    aliases: [dbnameban]
   banned:
     description: Allows the user to check if names or IPs are banned.
-    aliases: [debanned]
+    aliases: [dbbanned]
   warn:
     description: Allows the user to issue warnings.
-    aliases: [dewarn]
+    aliases: [dbwarn]
   unwarn:
     description: Allows the user to pardon a single warning.
-    aliases: [deunwarn]
+    aliases: [dbunwarn]
   rangeban:
     description: Allows the user to ban an ip range.
-    aliases: [derangeban]
+    aliases: [dbrangeban]
+  rangeunban:
+    description: Allows the user to unban an ip range.
+    aliases: [dbrangeunban]
+  rangewhitelist:
+    description: Allows the user to whitelist a name in a rangeban.
   deltabanssave:
     description: Allows the user to force save ban and warning files.
 

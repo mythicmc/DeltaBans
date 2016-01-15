@@ -21,12 +21,14 @@ import com.yahoo.tracebachi.DeltaBans.Bungee.Storage.*;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.ConfigUtil;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisPlugin;
+import io.netty.util.internal.ConcurrentSet;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
 
 import java.io.*;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,6 +42,7 @@ public class DeltaBansPlugin extends Plugin
     private WarningStorage warningStorage;
     private WarningListener warningListener;
     private RangeBanStorage rangeBanStorage;
+    private final Set<String> rangeBanWhitelist = new ConcurrentSet<>();
     private GeneralListener generalListener;
     private final Object saveLock = new Object();
 
@@ -72,6 +75,7 @@ public class DeltaBansPlugin extends Plugin
         readWarnings();
         rangeBanStorage = new RangeBanStorage();
         readRangeBans();
+        readRangeBanWhitelist();
 
         DeltaRedisPlugin deltaRedisPlugin = (DeltaRedisPlugin) getProxy()
             .getPluginManager().getPlugin("DeltaRedis");
@@ -117,10 +121,18 @@ public class DeltaBansPlugin extends Plugin
             banListener = null;
         }
 
-        if(banStorage != null && warningStorage != null)
+        if(banStorage != null && warningStorage != null && rangeBanStorage != null)
         {
             writeBansAndWarnings();
             banStorage = null;
+            warningStorage = null;
+            rangeBanStorage = null;
+            rangeBanWhitelist.clear();
+        }
+        else
+        {
+            getLogger().severe("Failed to save ban files on shutdown! " +
+                "One of the storages was not initialized correctly.");
         }
     }
 
@@ -149,6 +161,11 @@ public class DeltaBansPlugin extends Plugin
         return rangeBanStorage;
     }
 
+    public Set<String> getRangeBanWhitelist()
+    {
+        return rangeBanWhitelist;
+    }
+
     public WarningStorage getWarningStorage()
     {
         return warningStorage;
@@ -161,10 +178,20 @@ public class DeltaBansPlugin extends Plugin
         File banFile = new File(getDataFolder(), "bans.json");
         File rangeBanFile = new File(getDataFolder(), "rangebans.json");
         File warningFile = new File(getDataFolder(), "warnings.json");
+        File rangeBanWhitelistFile = new File(getDataFolder(), "rangeban-whitelist.json");
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonArray banArray = banStorage.toJson();
         JsonArray rangeBanArray = rangeBanStorage.toJson();
         JsonArray warningArray = warningStorage.toJson();
+        JsonArray rangeBanWhitelistArray = new JsonArray();
+
+        synchronized(rangeBanWhitelist)
+        {
+            for(String name : rangeBanWhitelist)
+            {
+                rangeBanWhitelistArray.add(new JsonPrimitive(name));
+            }
+        }
 
         synchronized(saveLock)
         {
@@ -194,6 +221,17 @@ public class DeltaBansPlugin extends Plugin
             {
                 gson.toJson(warningArray, writer);
                 getLogger().info("Done saving warnings.");
+            }
+            catch(IOException e)
+            {
+                e.printStackTrace();
+                return false;
+            }
+
+            try(BufferedWriter writer = new BufferedWriter(new FileWriter(rangeBanWhitelistFile)))
+            {
+                gson.toJson(rangeBanWhitelistArray, writer);
+                getLogger().info("Done saving rangeban whitelist.");
             }
             catch(IOException e)
             {
@@ -296,6 +334,30 @@ public class DeltaBansPlugin extends Plugin
                 {
                     ex.printStackTrace();
                 }
+            }
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private void readRangeBanWhitelist()
+    {
+        File file = new File(getDataFolder(), "rangeban-whitelist.json");
+
+        if(!file.exists()) { return; }
+
+        JsonParser parser = new JsonParser();
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            JsonArray array = parser.parse(reader).getAsJsonArray();
+
+            for(JsonElement element : array)
+            {
+                String name = element.getAsString();
+                rangeBanWhitelist.add(name.toLowerCase());
             }
         }
         catch(IOException e)
