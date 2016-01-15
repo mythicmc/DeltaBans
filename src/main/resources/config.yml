@@ -13,10 +13,13 @@ Database:
 xAuth-AccountsTable: accounts
 
 # Default message to show on ban
-DefaultBanMessage: 'You have been BANNED from this server!'
+DefaultBanMessage: 'You have been banned from this server!'
 
 # Default message to show on temp ban
-DefaultTempBanMessage: 'You have been temporarily BANNED from this server!'
+DefaultTempBanMessage: 'You have been temporarily banned from this server!'
+
+# Default message to show on range ban
+DefaultRangeBanMessage: 'You have been IP range banned from this server!'
 
 # Default message to show on warning
 DefaultWarningMessage: 'You have been warned!'

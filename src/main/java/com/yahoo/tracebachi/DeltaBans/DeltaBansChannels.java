@@ -8,6 +8,7 @@ public interface DeltaBansChannels
     String BAN = "DB-Ban";
     String UNBAN = "DB-Unban";
     String NAME_BAN = "DB-NameBan";
+    String RANGE_BAN = "DB-RangeBan";
     String WARN = "DB-Warn";
     String UNWARN = "DB-Unwarn";
     String BANNED = "DB-Banned";

@@ -18,6 +18,10 @@ package com.yahoo.tracebachi.DeltaBans.Bungee;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.Bungee.Storage.BanEntry;
+import com.yahoo.tracebachi.DeltaBans.Bungee.Storage.BanStorage;
+import com.yahoo.tracebachi.DeltaBans.Bungee.Storage.RangeBanEntry;
+import com.yahoo.tracebachi.DeltaBans.Bungee.Storage.RangeBanStorage;
 import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
 import com.yahoo.tracebachi.DeltaBans.DeltaBansUtils;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
@@ -47,20 +51,28 @@ public class BanListener implements Listener
 
     private String permanentBanFormat;
     private String temporaryBanFormat;
+    private String rangeBanFormat;
     private BanStorage banStorage;
+    private RangeBanStorage rangeBanStorage;
     private DeltaRedisApi deltaRedisApi;
 
     public BanListener(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
         this.permanentBanFormat = plugin.getPermanentBanFormat();
         this.temporaryBanFormat = plugin.getTemporaryBanFormat();
+        this.rangeBanFormat = plugin.getRangeBanFormat();
         this.banStorage = plugin.getBanStorage();
+        this.rangeBanStorage = plugin.getRangeBanStorage();
         this.deltaRedisApi = deltaRedisApi;
     }
 
     public void shutdown()
     {
+        this.permanentBanFormat = null;
+        this.temporaryBanFormat = null;
+        this.rangeBanFormat = null;
         this.banStorage = null;
+        this.rangeBanStorage = null;
         this.deltaRedisApi = null;
     }
 
@@ -69,6 +81,17 @@ public class BanListener implements Listener
     {
         PendingConnection pending = event.getConnection();
         String playerName = pending.getName().toLowerCase();
+        String address = pending.getAddress().getAddress().getHostAddress();
+
+        RangeBanEntry rangeBanEntry = rangeBanStorage.getIpRangeBan(address);
+
+        if(rangeBanEntry != null)
+        {
+            event.setCancelReason(getKickMessage(rangeBanEntry));
+            event.setCancelled(true);
+            return;
+        }
+
         BanEntry nameEntry = banStorage.getNameBanEntry(playerName);
 
         if(nameEntry != null)
@@ -85,7 +108,6 @@ public class BanListener implements Listener
             }
         }
 
-        String address = pending.getAddress().getAddress().getHostAddress();
         Set<BanEntry> ipBanEntries = banStorage.getIpBanEntries(address);
 
         if(ipBanEntries != null)
@@ -272,6 +294,12 @@ public class BanListener implements Listener
             result = String.format(permanentBanFormat, entry.getMessage(), entry.getBanner());
         }
 
+        return ChatColor.translateAlternateColorCodes('&', result);
+    }
+
+    private String getKickMessage(RangeBanEntry entry)
+    {
+        String result = String.format(rangeBanFormat, entry.getMessage(), entry.getBanner());
         return ChatColor.translateAlternateColorCodes('&', result);
     }
 }

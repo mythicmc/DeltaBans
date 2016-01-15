@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
  */
 public interface DeltaBansUtils
 {
+    Pattern DOT_PATTERN = Pattern.compile("\\.");
     Pattern IP_PATTERN = Pattern.compile(
         "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
         "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
@@ -62,5 +63,18 @@ public interface DeltaBansUtils
             hours + " hours, " +
             minutes + " minutes, " +
             seconds + " seconds";
+    }
+
+    static long convertIpToLong(String ip)
+    {
+        String[] splitIp = DOT_PATTERN.split(ip);
+        long result = 0;
+
+        for(int i = 0; i < 4; ++i)
+        {
+            result <<= 8;
+            result |= (255 & Integer.parseInt(splitIp[i]));
+        }
+        return result;
     }
 }

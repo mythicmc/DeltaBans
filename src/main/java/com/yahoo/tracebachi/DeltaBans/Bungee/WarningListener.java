@@ -19,6 +19,8 @@ package com.yahoo.tracebachi.DeltaBans.Bungee;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.Bungee.Storage.WarningEntry;
+import com.yahoo.tracebachi.DeltaBans.Bungee.Storage.WarningStorage;
 import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;

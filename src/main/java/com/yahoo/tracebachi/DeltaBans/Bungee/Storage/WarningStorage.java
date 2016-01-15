@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.yahoo.tracebachi.DeltaBans.Bungee;
+package com.yahoo.tracebachi.DeltaBans.Bungee.Storage;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonArray;

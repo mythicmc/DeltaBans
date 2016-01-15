@@ -17,6 +17,7 @@
 package com.yahoo.tracebachi.DeltaBans.Bungee;
 
 import com.google.gson.*;
+import com.yahoo.tracebachi.DeltaBans.Bungee.Storage.*;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.ConfigUtil;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisPlugin;
@@ -38,6 +39,7 @@ public class DeltaBansPlugin extends Plugin
     private BanListener banListener;
     private WarningStorage warningStorage;
     private WarningListener warningListener;
+    private RangeBanStorage rangeBanStorage;
     private GeneralListener generalListener;
     private final Object saveLock = new Object();
 
@@ -68,6 +70,8 @@ public class DeltaBansPlugin extends Plugin
         readBans();
         warningStorage = new WarningStorage();
         readWarnings();
+        rangeBanStorage = new RangeBanStorage();
+        readRangeBans();
 
         DeltaRedisPlugin deltaRedisPlugin = (DeltaRedisPlugin) getProxy()
             .getPluginManager().getPlugin("DeltaRedis");
@@ -130,9 +134,19 @@ public class DeltaBansPlugin extends Plugin
         return (config != null) ? config.getString("TemporaryBan") : "BAD_CONFIG";
     }
 
+    public String getRangeBanFormat()
+    {
+        return (config != null) ? config.getString("RangeBan") : "BAD_CONFIG";
+    }
+
     public BanStorage getBanStorage()
     {
         return banStorage;
+    }
+
+    public RangeBanStorage getRangeBanStorage()
+    {
+        return rangeBanStorage;
     }
 
     public WarningStorage getWarningStorage()
@@ -145,9 +159,11 @@ public class DeltaBansPlugin extends Plugin
         getLogger().info("Saving bans and warnings ...");
 
         File banFile = new File(getDataFolder(), "bans.json");
+        File rangeBanFile = new File(getDataFolder(), "rangebans.json");
         File warningFile = new File(getDataFolder(), "warnings.json");
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonArray banArray = banStorage.toJson();
+        JsonArray rangeBanArray = rangeBanStorage.toJson();
         JsonArray warningArray = warningStorage.toJson();
 
         synchronized(saveLock)
@@ -156,6 +172,17 @@ public class DeltaBansPlugin extends Plugin
             {
                 gson.toJson(banArray, writer);
                 getLogger().info("Done saving bans.");
+            }
+            catch(IOException e)
+            {
+                e.printStackTrace();
+                return false;
+            }
+
+            try(BufferedWriter writer = new BufferedWriter(new FileWriter(rangeBanFile)))
+            {
+                gson.toJson(rangeBanArray, writer);
+                getLogger().info("Done saving range bans.");
             }
             catch(IOException e)
             {
@@ -197,7 +224,7 @@ public class DeltaBansPlugin extends Plugin
                     BanEntry entry = BanEntry.fromJson(element.getAsJsonObject());
                     banStorage.add(entry);
                 }
-                catch(IllegalArgumentException ex)
+                catch(NullPointerException | IllegalArgumentException ex)
                 {
                     ex.printStackTrace();
                 }
@@ -234,7 +261,38 @@ public class DeltaBansPlugin extends Plugin
                         warningStorage.add(name, WarningEntry.fromJson(warningObject));
                     }
                 }
-                catch(IllegalArgumentException ex)
+                catch(NullPointerException | IllegalArgumentException ex)
+                {
+                    ex.printStackTrace();
+                }
+            }
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private void readRangeBans()
+    {
+        File file = new File(getDataFolder(), "rangebans.json");
+
+        if(!file.exists()) { return; }
+
+        JsonParser parser = new JsonParser();
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            JsonArray array = parser.parse(reader).getAsJsonArray();
+
+            for(JsonElement element : array)
+            {
+                try
+                {
+                    RangeBanEntry entry = RangeBanEntry.fromJson(element.getAsJsonObject());
+                    rangeBanStorage.add(entry);
+                }
+                catch(NullPointerException | IllegalArgumentException ex)
                 {
                     ex.printStackTrace();
                 }
