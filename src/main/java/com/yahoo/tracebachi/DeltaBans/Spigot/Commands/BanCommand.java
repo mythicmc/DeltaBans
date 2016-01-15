@@ -99,6 +99,13 @@ public class BanCommand extends DeltaBansCommand
             {
                 name = possibleIp;
                 possibleIp = plugin.getIpOfPlayer(name);
+
+                if(possibleIp == null)
+                {
+                    sender.sendMessage(Prefixes.FAILURE + "There is no IP information for " +
+                        Prefixes.input(name) + ". However, they can still be banned with /nameban");
+                    return;
+                }
             }
             catch(IllegalArgumentException ex)
             {

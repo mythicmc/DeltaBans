@@ -79,11 +79,13 @@ public class WarningStorage
 
         if(warnings != null)
         {
-            for(int i = amount; i > 0 && warnings.size() > 0; --i)
+            for(int i = amount; i > 0 && warnings.size() >= 0; i--)
             {
                 if(warnings.size() <= 1)
                 {
+                    warnings.clear();
                     warningsMap.remove(name);
+                    i = 0;
                 }
                 else
                 {
