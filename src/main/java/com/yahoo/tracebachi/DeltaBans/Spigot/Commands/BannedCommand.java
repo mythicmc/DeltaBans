@@ -19,6 +19,7 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansUtils;
 import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
@@ -68,7 +69,7 @@ public class BannedCommand extends DeltaBansCommand
 
         String senderName = sender.getName();
         String argument = args[0];
-        boolean isIp = DeltaBansPlugin.isIp(argument);
+        boolean isIp = DeltaBansUtils.isIp(argument);
 
         if(isIp && !hasExtraPerm)
         {

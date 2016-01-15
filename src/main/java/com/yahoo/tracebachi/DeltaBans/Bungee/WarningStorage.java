@@ -32,8 +32,8 @@ public class WarningStorage
     public synchronized List<WarningEntry> getWarnings(String name)
     {
         Preconditions.checkNotNull(name, "Name cannot be null.");
-
         name = name.toLowerCase();
+
         List<WarningEntry> warnings = warningsMap.get(name);
 
         if(warnings == null)
@@ -55,8 +55,8 @@ public class WarningStorage
     {
         Preconditions.checkNotNull(name, "Name cannot be null.");
         Preconditions.checkNotNull(entry, "Message cannot be null.");
-
         name = name.toLowerCase();
+
         List<WarningEntry> warnings = warningsMap.get(name);
 
         if(warnings == null)
@@ -69,37 +69,30 @@ public class WarningStorage
         return warnings.size();
     }
 
-    public synchronized void removeOne(String name)
+    public synchronized int remove(String name, int amount)
     {
         Preconditions.checkNotNull(name, "Name cannot be null.");
-
         name = name.toLowerCase();
+
+        int count = 0;
         List<WarningEntry> warnings = warningsMap.get(name);
 
         if(warnings != null)
         {
-            if(warnings.size() <= 1)
+            for(int i = amount; i > 0 && warnings.size() > 0; --i)
             {
-                warningsMap.remove(name);
-            }
-            else
-            {
-                warnings.remove(warnings.size() - 1);
+                if(warnings.size() <= 1)
+                {
+                    warningsMap.remove(name);
+                }
+                else
+                {
+                    warnings.remove(warnings.size() - 1);
+                }
+                count++;
             }
         }
-    }
-
-    public synchronized void removeAll(String name)
-    {
-        Preconditions.checkNotNull(name, "Name cannot be null.");
-
-        name = name.toLowerCase();
-        List<WarningEntry> warnings = warningsMap.get(name);
-
-        if(warnings != null)
-        {
-            warningsMap.remove(name);
-        }
+        return count;
     }
 
     public void cleanupWarnings(long warningDuration)

@@ -18,12 +18,15 @@ package com.yahoo.tracebachi.DeltaBans.Bungee;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansUtils;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.Prefixes;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.PendingConnection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -40,18 +43,12 @@ import java.util.Set;
  */
 public class BanListener implements Listener
 {
-    private static final String BAN_CHANNEL = "DB-Ban";
-    private static final String UNBAN_CHANNEL = "DB-Unban";
-    private static final String NAME_BAN_CHANNEL = "DB-NameBan";
-    private static final String CHECK_BAN_CHANNEL = "DB-CheckBan";
-    private static final String SAVE_BANS_CHANNEL = "DB-SaveBans";
-    private static final String ANNOUNCE = "DB-Announce";
+    private final String HIDDEN_IP = "\u00A7k255\u00A7r.\u00A7k255\u00A7r.\u00A7k255\u00A7r.\u00A7k255\u00A7r";
 
     private String permanentBanFormat;
     private String temporaryBanFormat;
     private BanStorage banStorage;
     private DeltaRedisApi deltaRedisApi;
-    private DeltaBansPlugin plugin;
 
     public BanListener(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
@@ -59,14 +56,12 @@ public class BanListener implements Listener
         this.temporaryBanFormat = plugin.getTemporaryBanFormat();
         this.banStorage = plugin.getBanStorage();
         this.deltaRedisApi = deltaRedisApi;
-        this.plugin = plugin;
     }
 
     public void shutdown()
     {
         this.banStorage = null;
         this.deltaRedisApi = null;
-        this.plugin = null;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -124,24 +119,18 @@ public class BanListener implements Listener
         byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
         ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
 
-        if(channel.equals(BAN_CHANNEL))
+        if(channel.equals(DeltaBansChannels.BAN))
         {
             String banner = in.readUTF();
             String banMessage = in.readUTF();
             String ip = in.readUTF();
             Long duration = Long.valueOf(in.readUTF(), 16);
+            boolean isSilent = in.readBoolean();
             boolean hasName = in.readBoolean();
             String name = null;
 
-            if(duration == 0)
-            {
-                duration = null;
-            }
-
-            if(hasName)
-            {
-                name = in.readUTF().toLowerCase();
-            }
+            if(duration == 0) duration = null;
+            if(hasName) name = in.readUTF();
 
             // If an IP is being banned which is already banned, but also has no name
             if(!hasName && banStorage.isIpBanned(ip))
@@ -151,47 +140,23 @@ public class BanListener implements Listener
             }
             else
             {
-                BanEntry entry = new BanEntry(name, ip, banner,
-                    banMessage, duration, System.currentTimeMillis());
+                BanEntry entry = new BanEntry(name, ip, banner, banMessage, duration);
                 banStorage.add(entry);
-
-                // Kick player off the proxy
-                if(name != null)
-                {
-                    kickByName(name, getKickMessage(entry));
-                }
-                else
-                {
-                    kickByIp(ip, getKickMessage(entry));
-                }
+                kickOffProxy(name, ip, getKickMessage(entry));
 
                 String announcement = formatBanAnnouncement(banner, name, hasName,
-                    banMessage, entry.hasDuration());
-                deltaRedisApi.publish(Channels.SPIGOT, ANNOUNCE, announcement);
+                    banMessage, entry.hasDuration(), isSilent);
+                deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
             }
         }
-        else if(channel.equals(UNBAN_CHANNEL))
+        else if(channel.equals(DeltaBansChannels.UNBAN))
         {
             String sender = in.readUTF();
             String banee = in.readUTF();
-            boolean isName = in.readBoolean();
+            boolean isIp = in.readBoolean();
+            boolean isSilent = in.readBoolean();
 
-            if(isName)
-            {
-                BanEntry entry = banStorage.removeUsingName(banee.toLowerCase());
-
-                if(entry == null)
-                {
-                    deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
-                        Prefixes.INFO + "Ban not found for " + banee);
-                }
-                else
-                {
-                    String announcement = formatUnbanAnnouncement(sender, banee, true);
-                    deltaRedisApi.publish(Channels.SPIGOT, ANNOUNCE, announcement);
-                }
-            }
-            else
+            if(isIp)
             {
                 Set<BanEntry> entries = banStorage.removeUsingIp(banee);
 
@@ -202,16 +167,32 @@ public class BanListener implements Listener
                 }
                 else
                 {
-                    String announcement = formatUnbanAnnouncement(sender, banee, false);
-                    deltaRedisApi.publish(Channels.SPIGOT, ANNOUNCE, announcement);
+                    String announcement = formatUnbanAnnouncement(sender, banee, true, isSilent);
+                    deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+                }
+            }
+            else
+            {
+                BanEntry entry = banStorage.removeUsingName(banee.toLowerCase());
+
+                if(entry == null)
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
+                        Prefixes.INFO + "Ban not found for " + banee);
+                }
+                else
+                {
+                    String announcement = formatUnbanAnnouncement(sender, banee, false, isSilent);
+                    deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
                 }
             }
         }
-        else if(channel.equals(NAME_BAN_CHANNEL))
+        else if(channel.equals(DeltaBansChannels.NAME_BAN))
         {
             String banner = in.readUTF();
             String banMessage = in.readUTF();
             String name = in.readUTF().toLowerCase();
+            boolean isSilent = in.readBoolean();
 
             if(banStorage.isNameBanned(name))
             {
@@ -220,163 +201,77 @@ public class BanListener implements Listener
             }
             else
             {
-                BanEntry entry = new BanEntry(name, null, banner,
-                    banMessage, null, System.currentTimeMillis());
+                BanEntry entry = new BanEntry(name, null, banner, banMessage, null);
                 banStorage.add(entry);
+                kickOffProxy(name, null, getKickMessage(entry));
 
-                // Kick player off the proxy
-                kickByName(name, getKickMessage(entry));
-
-                String announcement = formatBanAnnouncement(banner, name, true, banMessage, false);
-                deltaRedisApi.publish(Channels.SPIGOT, ANNOUNCE, announcement);
+                String announcement = formatBanAnnouncement(banner, name, false, banMessage, false, isSilent);
+                deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
             }
         }
-        else if(channel.equals(CHECK_BAN_CHANNEL))
-        {
-            String sender = in.readUTF();
-            String argument = in.readUTF();
-            boolean isName = in.readBoolean();
-            boolean includeIp = in.readBoolean();
+    }
 
-            if(isName)
+    private void kickOffProxy(String name, String ip, String message)
+    {
+        BaseComponent[] componentMessage = TextComponent.fromLegacyText(message);
+
+        if(name != null)
+        {
+            ProxiedPlayer proxiedPlayer = BungeeCord.getInstance().getPlayer(name);
+            if(proxiedPlayer != null)
             {
-                BanEntry entry = banStorage.getNameBanEntry(argument.toLowerCase());
-                sendCheckBanInfo(event.getSender(), sender, entry, includeIp);
+                proxiedPlayer.disconnect(componentMessage);
             }
-            else
+        }
+
+        if(ip != null)
+        {
+            for(ProxiedPlayer player : BungeeCord.getInstance().getPlayers())
             {
-                Set<BanEntry> entries = banStorage.getIpBanEntries(argument);
-                for(BanEntry entry : entries)
+                if(player.getAddress().toString().equals(ip))
                 {
-                    sendCheckBanInfo(event.getSender(), sender, entry, includeIp);
+                    player.disconnect(componentMessage);
                 }
             }
         }
-        else if(channel.equals(SAVE_BANS_CHANNEL))
-        {
-            String sender = event.getMessage();
-            if(plugin.writeBansAndWarnings())
-            {
-                deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
-                    Prefixes.SUCCESS + "Ban and warning files saved.");
-            }
-            else
-            {
-                deltaRedisApi.sendMessageToPlayer(event.getSender(), sender,
-                    Prefixes.FAILURE + "Error saving files. More details in the BungeeCord console.");
-            }
-        }
     }
 
-    private void kickByName(String name, String message)
+    private String formatBanAnnouncement(String banner, String banee, boolean isIp, String message,
+        boolean isTemporary, boolean isSilent)
     {
-        ProxiedPlayer proxiedPlayer = BungeeCord.getInstance().getPlayer(name);
-        if(proxiedPlayer != null)
-        {
-            proxiedPlayer.disconnect(TextComponent.fromLegacyText(message));
-        }
-    }
-
-    private void kickByIp(String ip, String message)
-    {
-        for(ProxiedPlayer player : BungeeCord.getInstance().getPlayers())
-        {
-            if(player.getAddress().toString().equals(ip))
-            {
-                player.disconnect(TextComponent.fromLegacyText(message));
-            }
-        }
-    }
-
-    private String formatBanAnnouncement(String banner, String banee, boolean isName,
-        String message, boolean isTemporary)
-    {
-        if(!isName)
-        {
-            banee = "255.255.255.255";
-        }
-        return ChatColor.GOLD + banner +
+        return ((isSilent) ? "!" : "") +
+            ChatColor.GOLD + banner +
             ChatColor.WHITE + ((isTemporary) ? " temp-banned " : " banned ") +
-            ChatColor.GOLD + banee +
+            ChatColor.GOLD + ((isIp) ? HIDDEN_IP : banee) +
             ChatColor.WHITE + " for " +
             ChatColor.GOLD + message;
     }
 
-    private String formatUnbanAnnouncement(String sender, String banee, boolean isName)
+    private String formatUnbanAnnouncement(String sender, String banee, boolean isIp, boolean isSilent)
     {
-        if(!isName)
-        {
-            banee = "255.255.255.255";
-        }
-        return ChatColor.GOLD + sender +
+        return ((isSilent) ? "!" : "") +
+            ChatColor.GOLD + sender +
             ChatColor.WHITE + " unbanned " +
-            ChatColor.GOLD + banee;
+            ChatColor.GOLD + ((isIp) ? HIDDEN_IP : banee);
     }
 
     private String getKickMessage(BanEntry entry)
     {
         String result;
+
         if(entry.hasDuration())
         {
-            long remainingTime = entry.getCreatedAt() + entry.getDuration()
-                - System.currentTimeMillis();
-            result = String.format(temporaryBanFormat, entry.getMessage(),
-                entry.getBanner(), formatDuration(remainingTime));
+            long currentTime = System.currentTimeMillis();
+            long remainingTime = entry.getCreatedAt() + entry.getDuration() - currentTime;
+
+            result = String.format(temporaryBanFormat, entry.getMessage(), entry.getBanner(),
+                DeltaBansUtils.formatDuration(remainingTime));
         }
         else
         {
-            result = String.format(permanentBanFormat, entry.getMessage(),
-                entry.getBanner());
+            result = String.format(permanentBanFormat, entry.getMessage(), entry.getBanner());
         }
 
         return ChatColor.translateAlternateColorCodes('&', result);
-    }
-
-    private void sendCheckBanInfo(String server, String sender, BanEntry entry, boolean includeIp)
-    {
-        if(entry == null)
-        {
-            deltaRedisApi.sendMessageToPlayer(server, sender,
-                Prefixes.INFO + "Ban not found.");
-            return;
-        }
-
-        StringBuilder builder = new StringBuilder(Prefixes.INFO + "Ban found\n");
-        builder.append(Prefixes.INFO).append("Name: ");
-        builder.append(Prefixes.input(entry.getName())).append("\n");
-
-        if(includeIp)
-        {
-            builder.append(Prefixes.INFO).append("IP: ");
-            builder.append(Prefixes.input(entry.getIp())).append("\n");
-        }
-
-        builder.append(Prefixes.INFO).append("Banner: ");
-        builder.append(Prefixes.input(entry.getBanner())).append("\n");
-        builder.append(Prefixes.INFO).append("Ban Message: ");
-        builder.append(Prefixes.input(entry.getMessage())).append("\n");
-        builder.append(Prefixes.INFO).append("Duration: ");
-        builder.append(Prefixes.input(formatDuration(entry.getDuration())));
-
-        deltaRedisApi.sendMessageToPlayer(server, sender, builder.toString());
-    }
-
-    private String formatDuration(Long input)
-    {
-        if(input == null)
-        {
-            return "Forever!";
-        }
-
-        long inputSeconds = input / 1000;
-        long days = (inputSeconds / (24 * 60 * 60));
-        long hours = (inputSeconds / (60 * 60)) % 24;
-        long minutes = (inputSeconds / (60)) % 60;
-        long seconds = inputSeconds % 60;
-
-        return days + " days, " +
-            hours + " hours, " +
-            minutes + " minutes, " +
-            seconds + " seconds";
     }
 }

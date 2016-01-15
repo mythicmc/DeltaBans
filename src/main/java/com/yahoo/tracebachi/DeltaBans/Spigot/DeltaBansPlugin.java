@@ -22,20 +22,12 @@ import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisPlugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.*;
-import java.util.regex.Pattern;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
 public class DeltaBansPlugin extends JavaPlugin
 {
-    private static final Pattern IP_PATTERN = Pattern.compile(
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])"
-    );
-
     private boolean debug;
     private String username;
     private String password;
@@ -235,37 +227,6 @@ public class DeltaBansPlugin extends JavaPlugin
         {
             getLogger().info("[Debug] " + message);
         }
-    }
-
-    public static boolean isIp(String input)
-    {
-        return IP_PATTERN.matcher(input).matches();
-    }
-
-    public static boolean isSilent(String[] input)
-    {
-        boolean flag = false;
-        for(String word : input)
-        {
-            flag |= word.equalsIgnoreCase("-s");
-        }
-        return flag;
-    }
-
-    public static String[] filterSilent(String[] input)
-    {
-        int index = 0;
-        String[] result = new String[input.length - 1];
-
-        for(String word : input)
-        {
-            if(!word.equalsIgnoreCase("-s"))
-            {
-                result[index] = word;
-                index++;
-            }
-        }
-        return result;
     }
 
     private void updateConnection() throws SQLException

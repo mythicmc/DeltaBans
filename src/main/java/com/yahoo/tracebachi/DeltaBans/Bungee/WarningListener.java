@@ -19,6 +19,7 @@ package com.yahoo.tracebachi.DeltaBans.Bungee;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
 import com.yahoo.tracebachi.DeltaRedis.Bungee.Prefixes;
@@ -28,18 +29,12 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
 public class WarningListener implements Listener
 {
-    private static final String ADD_WARN_CHANNEL = "DB-AddWarning";
-    private static final String CHECK_WARN_CHANNEL = "DB-CheckWarning";
-    private static final String PARDON_WARN_CHANNEL = "DB-PardonWarning";
-    private static final String ANNOUNCE = "DB-Announce";
-
     private WarningStorage warningStorage;
     private DeltaRedisApi deltaRedisApi;
 
@@ -59,65 +54,46 @@ public class WarningListener implements Listener
     public void onRedisMessage(DeltaRedisMessageEvent event)
     {
         String channel = event.getChannel();
-        ByteArrayDataInput in = ByteStreams.newDataInput(event.getMessage().getBytes(StandardCharsets.UTF_8));
+        byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
+        ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
 
-        if(channel.equals(ADD_WARN_CHANNEL))
+        if(channel.equals(DeltaBansChannels.WARN))
         {
             String warner = in.readUTF();
             String name = in.readUTF();
             String message = in.readUTF();
+            boolean isSilent = in.readBoolean();
             int count = warningStorage.add(name, new WarningEntry(message));
 
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
+            out.writeUTF(warner);
             out.writeUTF(name);
+            out.writeUTF(message);
             out.writeUTF(Integer.toHexString(count));
 
-            deltaRedisApi.publish(event.getSender(), ADD_WARN_CHANNEL,
+            deltaRedisApi.publish(event.getSender(), DeltaBansChannels.WARN,
                 new String(out.toByteArray(), StandardCharsets.UTF_8));
 
-            deltaRedisApi.publish(Channels.SPIGOT, ANNOUNCE,
-                formatWarnAnnouncement(warner, name, message));
+            deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE,
+                formatWarnAnnouncement(warner, name, message, isSilent));
         }
-        else if(channel.equalsIgnoreCase(PARDON_WARN_CHANNEL))
+        else if(channel.equalsIgnoreCase(DeltaBansChannels.UNWARN))
         {
-            String pardoner = in.readUTF();
+            String warner = in.readUTF();
             String name = in.readUTF();
-            boolean all = in.readBoolean();
+            int amount = Integer.parseInt(in.readUTF(), 16);
 
-            if(all)
-            {
-                warningStorage.removeAll(name);
-                deltaRedisApi.sendMessageToPlayer(event.getSender(), pardoner,
-                    Prefixes.SUCCESS + "Pardoned all warnings for " + name);
-            }
-            else
-            {
-                warningStorage.removeOne(name);
-                deltaRedisApi.sendMessageToPlayer(event.getSender(), pardoner,
-                    Prefixes.SUCCESS + "Pardoned one warning for " + name);
-            }
-        }
-        else if(channel.equalsIgnoreCase(CHECK_WARN_CHANNEL))
-        {
-            String checker = in.readUTF();
-            String name = in.readUTF();
-            List<WarningEntry> warnings = warningStorage.getWarnings(name);
-            StringBuilder builder = new StringBuilder(Prefixes.INFO + "Warnings for " +
-                Prefixes.input(name));
-
-            for(WarningEntry entry : warnings)
-            {
-                builder.append("\n");
-                builder.append(" - ").append(entry.getMessage());
-            }
-
-            deltaRedisApi.sendMessageToPlayer(event.getSender(), checker, builder.toString());
+            amount = warningStorage.remove(name, amount);
+            deltaRedisApi.sendMessageToPlayer(event.getSender(), warner,
+                Prefixes.SUCCESS + "Removed " + Prefixes.input(amount) +
+                " warnings for " + name);
         }
     }
 
-    private String formatWarnAnnouncement(String warner, String name, String message)
+    private String formatWarnAnnouncement(String warner, String name, String message, boolean isSilent)
     {
-        return ChatColor.GOLD + warner +
+        return ((isSilent) ? "!" : "") +
+            ChatColor.GOLD + warner +
             ChatColor.WHITE + " warned " +
             ChatColor.GOLD + name +
             ChatColor.WHITE + " for " +

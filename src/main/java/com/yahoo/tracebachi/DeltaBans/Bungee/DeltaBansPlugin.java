@@ -38,6 +38,7 @@ public class DeltaBansPlugin extends Plugin
     private BanListener banListener;
     private WarningStorage warningStorage;
     private WarningListener warningListener;
+    private GeneralListener generalListener;
     private final Object saveLock = new Object();
 
     @Override
@@ -76,6 +77,8 @@ public class DeltaBansPlugin extends Plugin
         getProxy().getPluginManager().registerListener(this, banListener);
         warningListener = new WarningListener(deltaRedisApi, warningStorage);
         getProxy().getPluginManager().registerListener(this, warningListener);
+        generalListener = new GeneralListener(deltaRedisApi, this);
+        getProxy().getPluginManager().registerListener(this, generalListener);
 
         getProxy().getScheduler().schedule(this, this::writeBansAndWarnings,
             minutesPerBanSave, minutesPerBanSave, TimeUnit.MINUTES);
@@ -88,6 +91,13 @@ public class DeltaBansPlugin extends Plugin
     public void onDisable()
     {
         getProxy().getScheduler().cancel(this);
+
+        if(generalListener != null)
+        {
+            getProxy().getPluginManager().unregisterListener(generalListener);
+            generalListener.shutdown();
+            generalListener = null;
+        }
 
         if(warningListener != null)
         {

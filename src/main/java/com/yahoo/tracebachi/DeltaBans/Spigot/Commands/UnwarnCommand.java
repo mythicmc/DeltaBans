@@ -19,6 +19,7 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansUtils;
 import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
@@ -58,10 +59,10 @@ public class UnwarnCommand extends DeltaBansCommand
     @Override
     public void runCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        boolean isSilent = DeltaBansPlugin.isSilent(args);
+        boolean isSilent = DeltaBansUtils.isSilent(args);
         if(isSilent)
         {
-            args = DeltaBansPlugin.filterSilent(args);
+            args = DeltaBansUtils.filterSilent(args);
         }
 
         if(args.length < 1)
@@ -73,7 +74,7 @@ public class UnwarnCommand extends DeltaBansCommand
         String warner = sender.getName();
         String name = args[0];
 
-        if(DeltaBansPlugin.isIp(name))
+        if(DeltaBansUtils.isIp(name))
         {
             sender.sendMessage(Prefixes.FAILURE + "You cannot unwarn IPs.");
             return;

@@ -31,7 +31,12 @@ public class BanEntry
     private final Long duration;
     private final long createdAt;
 
-    public BanEntry(String name, String ip, String banner, String message, Long duration, long createdAt)
+    public BanEntry(String name, String ip, String banner, String message, Long duration)
+    {
+        this(name, ip, banner, message, duration, System.currentTimeMillis());
+    }
+
+    public BanEntry(String name, String ip, String banner, String message, Long duration, Long createdAt)
     {
         if(name == null && ip == null)
         {
@@ -53,7 +58,7 @@ public class BanEntry
         this.banner = banner;
         this.message = message;
         this.duration = duration;
-        this.createdAt = createdAt;
+        this.createdAt = (createdAt == null) ? System.currentTimeMillis() : createdAt;
     }
 
     public String getName()
@@ -119,7 +124,7 @@ public class BanEntry
         JsonElement duration = object.get("duration");
         JsonElement createdAt = object.get("created_at");
 
-        if((name == null && ip == null) || banner == null || createdAt == null)
+        if((name == null && ip == null) || banner == null)
         {
             throw new IllegalArgumentException("Ban is not properly formatted:\n" +
                 object.toString());
@@ -131,7 +136,7 @@ public class BanEntry
             banner.getAsString(),
             message == null ? "Unspecified Reason" : message.getAsString(),
             duration == null ? null : duration.getAsLong(),
-            createdAt.getAsLong()
+            createdAt == null ? null : createdAt.getAsLong()
         );
     }
 

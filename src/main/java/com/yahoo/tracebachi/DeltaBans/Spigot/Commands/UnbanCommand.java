@@ -19,6 +19,7 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansUtils;
 import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
@@ -50,10 +51,10 @@ public class UnbanCommand extends DeltaBansCommand
     @Override
     public void runCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        boolean isSilent = DeltaBansPlugin.isSilent(args);
+        boolean isSilent = DeltaBansUtils.isSilent(args);
         if(isSilent)
         {
-            args = DeltaBansPlugin.filterSilent(args);
+            args = DeltaBansUtils.filterSilent(args);
         }
 
         if(args.length < 1)
@@ -64,7 +65,7 @@ public class UnbanCommand extends DeltaBansCommand
 
         String banner = sender.getName();
         String banee = args[0];
-        boolean isIp = DeltaBansPlugin.isIp(banee);
+        boolean isIp = DeltaBansUtils.isIp(banee);
 
         if(banee.equals(banner))
         {

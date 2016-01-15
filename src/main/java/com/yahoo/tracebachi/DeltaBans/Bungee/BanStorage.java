@@ -37,13 +37,16 @@ public class BanStorage
     {
         Preconditions.checkNotNull(ban, "Ban cannot be null.");
 
+        // Add to the main ban set
         banSet.add(ban);
 
+        // If the ban has a name, add it to the name map
         if(ban.hasName())
         {
             nameMap.put(ban.getName(), ban);
         }
 
+        // If the ban has an ip, add it to the ip map
         if(ban.hasIp())
         {
             Set<BanEntry> bansOnIp = ipMap.get(ban.getIp());

@@ -20,7 +20,6 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisMessageEvent;
-import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -88,7 +87,7 @@ public class DeltaBansListener implements Listener
             {
                 if(isSilent && player.hasPermission("DeltaBans.SeeSilent"))
                 {
-                    player.sendMessage(message);
+                    player.sendMessage("[Silent] " + message);
                 }
                 else
                 {
