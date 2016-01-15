@@ -18,6 +18,7 @@ package com.yahoo.tracebachi.DeltaBans.Spigot;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisMessageEvent;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.Bukkit;
@@ -38,15 +39,11 @@ import java.util.regex.Pattern;
  */
 public class DeltaBansListener implements Listener
 {
-    private static final String ANNOUNCE = "DB-Announce";
-    private static final String ADD_WARN_CHANNEL = "DB-AddWarning";
-
     private static final Pattern NAME_PATTERN = Pattern.compile("\\{name\\}");
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message\\}");
 
     private DeltaBansPlugin plugin;
     private HashMap<Integer, List<String>> warnCommandMap = new HashMap<>();
-    private HashMap<String, PendingWarn> pendingWarnMap = new HashMap<>();
 
     public DeltaBansListener(DeltaBansPlugin plugin)
     {
@@ -73,8 +70,6 @@ public class DeltaBansListener implements Listener
 
     public void shutdown()
     {
-        pendingWarnMap.clear();
-        pendingWarnMap = null;
         warnCommandMap.clear();
         warnCommandMap = null;
         plugin = null;
@@ -83,67 +78,61 @@ public class DeltaBansListener implements Listener
     @EventHandler
     public void onRedisMessage(DeltaRedisMessageEvent event)
     {
-        if(event.getChannel().equals(ANNOUNCE))
+        if(event.getChannel().equals(DeltaBansChannels.ANNOUNCE))
         {
+            String message = event.getMessage();
+            boolean isSilent = message.startsWith("!");
+            message = message.substring(1);
+
             for(Player player : Bukkit.getOnlinePlayers())
             {
-                player.sendMessage(Prefixes.INFO + event.getMessage());
+                if(isSilent && player.hasPermission("DeltaBans.SeeSilent"))
+                {
+                    player.sendMessage(message);
+                }
+                else
+                {
+                    player.sendMessage(message);
+                }
             }
         }
-        else if(event.getChannel().equals(ADD_WARN_CHANNEL))
+        else if(event.getChannel().equals(DeltaBansChannels.WARN))
         {
             byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
             ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
-            String name = in.readUTF();
+            String senderName = in.readUTF();
+            String receiver = in.readUTF();
+            String message = in.readUTF();
             Integer amount = Integer.parseInt(in.readUTF(), 16);
-            PendingWarn pendingWarn = pendingWarnMap.remove(name);
 
-            Bukkit.broadcastMessage(name + ", " + amount);
-
-            if(pendingWarn == null) { return; }
-
-            Player player = Bukkit.getPlayer(pendingWarn.getSender());
+            Player player = Bukkit.getPlayer(senderName);
             if(player != null && player.isOnline())
             {
                 boolean wasOp = player.isOp();
                 player.setOp(true);
-                try
-                {
-                    dispatchWarn(player, name, pendingWarn, amount);
-                }
-                catch(Exception ignored) {}
+                dispatchWarn(player, receiver, message, amount);
                 player.setOp(wasOp);
             }
             else
             {
-                dispatchWarn(Bukkit.getConsoleSender(), name, pendingWarn, amount);
+                dispatchWarn(Bukkit.getConsoleSender(), receiver, message, amount);
             }
         }
     }
 
-    public boolean addPendingWarn(String receiver, PendingWarn pendingWarn)
-    {
-        receiver = receiver.toLowerCase();
-        if(!pendingWarnMap.containsKey(receiver))
-        {
-            pendingWarnMap.put(receiver, pendingWarn);
-            return true;
-        }
-        return false;
-    }
-
-    private void dispatchWarn(CommandSender sender, String receiver,
-        PendingWarn pendingWarn, Integer warnAmount)
+    private void dispatchWarn(CommandSender sender, String receiver, String message, Integer warnAmount)
     {
         for(String command : warnCommandMap.getOrDefault(warnAmount, Collections.emptyList()))
         {
-            String namedReplaced = NAME_PATTERN.matcher(command)
-                .replaceAll(receiver);
-            String messageReplaced = MESSAGE_PATTERN.matcher(namedReplaced)
-                .replaceAll(pendingWarn.getMessage());
+            String namedReplaced = NAME_PATTERN.matcher(command).replaceAll(receiver);
+            String messageReplaced = MESSAGE_PATTERN.matcher(namedReplaced).replaceAll(message);
 
             plugin.info(sender.getName() + " ran warn command /" + messageReplaced);
-            Bukkit.dispatchCommand(sender, messageReplaced);
+            try
+            {
+                Bukkit.dispatchCommand(sender, messageReplaced);
+            }
+            catch(Exception ignored) {}
         }
     }
 

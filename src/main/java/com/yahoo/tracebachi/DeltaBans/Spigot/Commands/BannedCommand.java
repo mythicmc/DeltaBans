@@ -18,12 +18,13 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -31,61 +32,62 @@ import java.util.List;
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
-public class CheckWarnCommand implements TabExecutor
+public class BannedCommand extends DeltaBansCommand
 {
-    private static final String CHECK_WARN_CHANNEL = "DB-CheckWarning";
-
     private DeltaRedisApi deltaRedisApi;
 
-    public CheckWarnCommand(DeltaRedisApi deltaRedisApi)
+    public BannedCommand(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
+        super("banned", "DeltaBans.CheckBan", plugin);
         this.deltaRedisApi = deltaRedisApi;
     }
 
-    public void shutdown()
+    @Override
+    public void onShutdown()
     {
         this.deltaRedisApi = null;
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args)
     {
-        if(args.length != 0)
-        {
-            String lastArg = args[args.length - 1];
-            return deltaRedisApi.matchStartOfName(lastArg);
-        }
-        return null;
+        String lastArg = args[args.length - 1];
+        return deltaRedisApi.matchStartOfName(lastArg);
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    public void runCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        if(!sender.hasPermission("DeltaBans.CheckWarn"))
+        boolean hasExtraPerm = sender.hasPermission("DeltaBans.CheckBan.Extra");
+
+        if(args.length == 0)
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
-            return true;
+            sender.sendMessage(Prefixes.INFO + "/banned <name|ip>");
+            return;
         }
 
-        if(args.length < 1)
+        String senderName = sender.getName();
+        String argument = args[0];
+        boolean isIp = DeltaBansPlugin.isIp(argument);
+
+        if(isIp && !hasExtraPerm)
         {
-            sender.sendMessage(Prefixes.INFO + "/checkwarn <name>");
-            return true;
+            sender.sendMessage(Prefixes.FAILURE + "You are not allowed to check IP bans.");
         }
-
-        String checker = sender.getName();
-        String name = args[0];
-
-        String checkWarnAsMessage = buildCheckWarnMessage(checker, name);
-        deltaRedisApi.publish(Channels.BUNGEECORD, CHECK_WARN_CHANNEL, checkWarnAsMessage);
-        return true;
+        else
+        {
+            String channelMessage = buildChannelMessage(senderName, argument, isIp, hasExtraPerm);
+            deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.BANNED, channelMessage);
+        }
     }
 
-    private String buildCheckWarnMessage(String warner, String name)
+    private String buildChannelMessage(String banner, String argument, boolean isIp, boolean hasExtra)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(warner);
-        out.writeUTF(name);
+        out.writeUTF(banner);
+        out.writeUTF(argument);
+        out.writeBoolean(isIp);
+        out.writeBoolean(hasExtra);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

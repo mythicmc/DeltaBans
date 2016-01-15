@@ -18,12 +18,13 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -31,72 +32,82 @@ import java.util.List;
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
-public class PardonWarnCommand implements TabExecutor
+public class UnwarnCommand extends DeltaBansCommand
 {
-    private static final String PARDON_WARN_CHANNEL = "DB-PardonWarning";
-
     private DeltaRedisApi deltaRedisApi;
 
-    public PardonWarnCommand(DeltaRedisApi deltaRedisApi)
+    public UnwarnCommand(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
+        super("unwarn", "DeltaBans.Warn", plugin);
         this.deltaRedisApi = deltaRedisApi;
     }
 
-    public void shutdown()
+    @Override
+    public void onShutdown()
     {
         this.deltaRedisApi = null;
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args)
     {
-        if(args.length != 0)
-        {
-            String lastArg = args[args.length - 1];
-            return deltaRedisApi.matchStartOfName(lastArg);
-        }
-        return null;
+        String lastArg = args[args.length - 1];
+        return deltaRedisApi.matchStartOfName(lastArg);
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    public void runCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        boolean canPardonOne = sender.hasPermission("DeltaBans.Pardon.One");
-        boolean canPardonAll = sender.hasPermission("DeltaBans.Pardon.All");
-        boolean pardonAll = command.getName().equalsIgnoreCase("pardonall");
-
-        if(!canPardonOne && !canPardonAll)
+        boolean isSilent = DeltaBansPlugin.isSilent(args);
+        if(isSilent)
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
-            return true;
-        }
-        else if(pardonAll && !canPardonAll)
-        {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
-            return true;
+            args = DeltaBansPlugin.filterSilent(args);
         }
 
         if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/pardon <name>");
-            sender.sendMessage(Prefixes.INFO + "/pardonall <name>");
-            return true;
+            sender.sendMessage(Prefixes.INFO + "/unwarn <name> [amount]");
+            return;
         }
 
         String warner = sender.getName();
         String name = args[0];
 
-        String pardonWarnAsMessage = buildPardonWarnMessage(warner, name, pardonAll);
-        deltaRedisApi.publish(Channels.BUNGEECORD, PARDON_WARN_CHANNEL, pardonWarnAsMessage);
-        return true;
+        if(DeltaBansPlugin.isIp(name))
+        {
+            sender.sendMessage(Prefixes.FAILURE + "You cannot unwarn IPs.");
+            return;
+        }
+
+        Integer amount = 1;
+        if(args.length >= 2)
+        {
+            amount = parseInt(args[1]);
+        }
+
+        String channelMessage = buildChannelMessage(warner, name, amount, isSilent);
+        deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.UNWARN, channelMessage);
     }
 
-    private String buildPardonWarnMessage(String warner, String name, boolean all)
+    private String buildChannelMessage(String warner, String name, Integer amount, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(warner);
         out.writeUTF(name);
-        out.writeBoolean(all);
+        out.writeUTF(Integer.toHexString(amount));
+        out.writeBoolean(isSilent);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+    private Integer parseInt(String source)
+    {
+        try
+        {
+            return Integer.parseInt(source);
+        }
+        catch(NumberFormatException ex)
+        {
+            return null;
+        }
     }
 }

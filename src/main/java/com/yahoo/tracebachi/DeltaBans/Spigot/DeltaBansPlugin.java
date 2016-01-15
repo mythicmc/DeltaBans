@@ -21,29 +21,35 @@ import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisPlugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
 import java.sql.*;
+import java.util.regex.Pattern;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
 public class DeltaBansPlugin extends JavaPlugin
 {
+    private static final Pattern IP_PATTERN = Pattern.compile(
+        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])"
+    );
+
     private boolean debug;
     private String username;
     private String password;
     private String url;
-    private String accountTable;
+    private String ipCheckQuery;
 
     private BanCommand banCommand;
-    private UnbanCommand unbanCommand;
-    private TempBanCommand tempBanCommand;
+    private BannedCommand bannedCommand;
     private NameBanCommand nameBanCommand;
-    private CheckBanCommand checkBanCommand;
+    private SaveCommand saveCommand;
+    private TempBanCommand tempBanCommand;
+    private UnbanCommand unbanCommand;
+    private UnwarnCommand unwarnCommand;
     private WarnCommand warnCommand;
-    private PardonWarnCommand pardonWarnCommand;
-    private CheckWarnCommand checkWarnCommand;
-    private SaveBansCommand saveBansCommand;
     private DeltaBansListener deltaBansListener;
 
     private Connection connection;
@@ -62,21 +68,24 @@ public class DeltaBansPlugin extends JavaPlugin
         username = getConfig().getString("Database.Username");
         password = getConfig().getString("Database.Password");
         url = getConfig().getString("Database.URL");
-        accountTable = getConfig().getString("xAuth-AccountsTable");
+
+        String accountTable = getConfig().getString("xAuth-AccountsTable");
+        String defaultBanMessage = getConfig().getString("DefaultBanMessage");
+        String defaultTempBanMessage = getConfig().getString("DefaultTempBanMessage");
+        String defaultWarningMessage = getConfig().getString("DefaultWarningMessage");
+        ipCheckQuery = "SELECT lastloginip FROM `" + accountTable + "` WHERE playername = ?;";
 
         DeltaRedisPlugin plugin = (DeltaRedisPlugin) getServer().getPluginManager().getPlugin("DeltaRedis");
         DeltaRedisApi deltaRedisApi = plugin.getDeltaRedisApi();
 
         try
         {
-            connection = DriverManager.getConnection(
-                "jdbc:mysql://" + url, username, password);
+            updateConnection();
         }
         catch(SQLException e)
         {
-            severe("Failed to connect to database containing xAuth account table.");
-            severe("Shutting down.");
             e.printStackTrace();
+            severe("Failed to connect to database containing xAuth account table. Shutting down ...");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -84,40 +93,32 @@ public class DeltaBansPlugin extends JavaPlugin
         deltaBansListener = new DeltaBansListener(this);
         getServer().getPluginManager().registerEvents(deltaBansListener, this);
 
-        banCommand = new BanCommand(deltaRedisApi, this);
-        getCommand("ban").setExecutor(banCommand);
-        getCommand("ban").setTabCompleter(banCommand);
+        banCommand = new BanCommand(defaultBanMessage, deltaRedisApi, this);
+        banCommand.register();
 
-        tempBanCommand = new TempBanCommand(deltaRedisApi, this);
-        getCommand("tempban").setExecutor(tempBanCommand);
-        getCommand("tempban").setTabCompleter(tempBanCommand);
+        tempBanCommand = new TempBanCommand(defaultTempBanMessage, deltaRedisApi, this);
+        tempBanCommand.register();
 
-        nameBanCommand = new NameBanCommand(deltaRedisApi);
-        getCommand("nameban").setExecutor(nameBanCommand);
-        getCommand("nameban").setTabCompleter(nameBanCommand);
+        nameBanCommand = new NameBanCommand(defaultBanMessage, deltaRedisApi, this);
+        nameBanCommand.register();
 
-        unbanCommand = new UnbanCommand(deltaRedisApi);
-        getCommand("unban").setExecutor(unbanCommand);
+        unbanCommand = new UnbanCommand(deltaRedisApi, this);
+        unbanCommand.register();
 
-        checkBanCommand = new CheckBanCommand(deltaRedisApi);
-        getCommand("checkban").setExecutor(checkBanCommand);
+        bannedCommand = new BannedCommand(deltaRedisApi, this);
+        bannedCommand.register();
 
-        warnCommand = new WarnCommand(deltaBansListener, deltaRedisApi);
-        getCommand("warn").setExecutor(warnCommand);
-        getCommand("warn").setTabCompleter(warnCommand);
+        warnCommand = new WarnCommand(defaultWarningMessage, deltaRedisApi, this);
+        warnCommand.register();
 
-        pardonWarnCommand = new PardonWarnCommand(deltaRedisApi);
-        getCommand("pardon").setExecutor(pardonWarnCommand);
-        getCommand("pardonall").setExecutor(pardonWarnCommand);
-        getCommand("pardon").setTabCompleter(pardonWarnCommand);
-        getCommand("pardonall").setTabCompleter(pardonWarnCommand);
+        unwarnCommand = new UnwarnCommand(deltaRedisApi, this);
+        unwarnCommand.register();
 
-        checkWarnCommand = new CheckWarnCommand(deltaRedisApi);
-        getCommand("checkwarn").setExecutor(checkWarnCommand);
-        getCommand("checkwarn").setTabCompleter(checkWarnCommand);
+        bannedCommand = new BannedCommand(deltaRedisApi, this);
+        bannedCommand.register();
 
-        saveBansCommand = new SaveBansCommand(deltaRedisApi);
-        getCommand("savebans").setExecutor(saveBansCommand);
+        saveCommand = new SaveCommand(deltaRedisApi, this);
+        saveCommand.register();
     }
 
     @Override
@@ -125,22 +126,22 @@ public class DeltaBansPlugin extends JavaPlugin
     {
         deltaBansListener = null;
 
-        if(saveBansCommand != null)
+        if(saveCommand != null)
         {
-            saveBansCommand.shutdown();
-            saveBansCommand = null;
+            saveCommand.shutdown();
+            saveCommand = null;
         }
 
-        if(checkWarnCommand != null)
+        if(bannedCommand != null)
         {
-            checkWarnCommand.shutdown();
-            checkWarnCommand = null;
+            bannedCommand.shutdown();
+            bannedCommand = null;
         }
 
-        if(pardonWarnCommand != null)
+        if(unwarnCommand != null)
         {
-            pardonWarnCommand.shutdown();
-            pardonWarnCommand = null;
+            unwarnCommand.shutdown();
+            unwarnCommand = null;
         }
 
         if(warnCommand != null)
@@ -149,10 +150,10 @@ public class DeltaBansPlugin extends JavaPlugin
             warnCommand = null;
         }
 
-        if(checkBanCommand != null)
+        if(bannedCommand != null)
         {
-            checkBanCommand.shutdown();
-            checkBanCommand = null;
+            bannedCommand.shutdown();
+            bannedCommand = null;
         }
 
         if(nameBanCommand != null)
@@ -191,12 +192,10 @@ public class DeltaBansPlugin extends JavaPlugin
 
     public String getIpOfPlayer(String playerName) throws IllegalArgumentException
     {
-        String sql = "SELECT lastloginip FROM " + accountTable + " WHERE playername = ?;";
-
         try
         {
             updateConnection();
-            try(PreparedStatement statement = connection.prepareStatement(sql))
+            try(PreparedStatement statement = connection.prepareStatement(ipCheckQuery))
             {
                 statement.setString(1, playerName);
                 try(ResultSet resultSet = statement.executeQuery())
@@ -238,13 +237,51 @@ public class DeltaBansPlugin extends JavaPlugin
         }
     }
 
+    public static boolean isIp(String input)
+    {
+        return IP_PATTERN.matcher(input).matches();
+    }
+
+    public static boolean isSilent(String[] input)
+    {
+        boolean flag = false;
+        for(String word : input)
+        {
+            flag |= word.equalsIgnoreCase("-s");
+        }
+        return flag;
+    }
+
+    public static String[] filterSilent(String[] input)
+    {
+        int index = 0;
+        String[] result = new String[input.length - 1];
+
+        for(String word : input)
+        {
+            if(!word.equalsIgnoreCase("-s"))
+            {
+                result[index] = word;
+                index++;
+            }
+        }
+        return result;
+    }
+
     private void updateConnection() throws SQLException
     {
-        if(!connection.isValid(1))
+        if(connection == null)
         {
+            debug("Establishing connection with DB for xAuth table ...");
+            connection = DriverManager.getConnection("jdbc:mysql://" + url, username, password);
+            debug("Establishing connection with DB for xAuth table ... Done");
+        }
+        else if(!connection.isValid(1))
+        {
+            debug("Reconnecting with DB for xAuth table ...");
             connection.close();
-            connection = DriverManager.getConnection(
-                "jdbc:mysql://" + url, username, password);
+            connection = DriverManager.getConnection("jdbc:mysql://" + url, username, password);
+            debug("Reconnecting with DB for xAuth table ... Done");
         }
     }
 }

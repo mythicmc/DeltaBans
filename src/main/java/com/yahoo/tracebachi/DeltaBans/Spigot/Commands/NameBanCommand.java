@@ -18,105 +18,96 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
-public class NameBanCommand implements TabExecutor
+public class NameBanCommand extends DeltaBansCommand
 {
-    private static final String NAME_BAN_CHANNEL = "DB-NameBan";
-    private static final Pattern IP_PATTERN = Pattern.compile(
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])"
-    );
-
+    private String defaultBanMessage;
     private DeltaRedisApi deltaRedisApi;
 
-    public NameBanCommand(DeltaRedisApi deltaRedisApi)
+    public NameBanCommand(String defaultBanMessage, DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
+        super("nameban", "DeltaBans.Ban", plugin);
+        this.defaultBanMessage = defaultBanMessage;
         this.deltaRedisApi = deltaRedisApi;
     }
 
-    public void shutdown()
+    @Override
+    public void onShutdown()
     {
         this.deltaRedisApi = null;
+        this.defaultBanMessage = null;
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args)
     {
-        if(args.length != 0)
-        {
-            String lastArg = args[args.length - 1];
-            return deltaRedisApi.matchStartOfName(lastArg);
-        }
-        return null;
+        String lastArg = args[args.length - 1];
+        return deltaRedisApi.matchStartOfName(lastArg);
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    public void runCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        if(!sender.hasPermission("DeltaBans.Ban"))
+        boolean isSilent = DeltaBansPlugin.isSilent(args);
+        if(isSilent)
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
-            return true;
+            args = DeltaBansPlugin.filterSilent(args);
         }
 
-        if(args.length == 0)
+        if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/nameban <name|ip> <message>");
-            return true;
+            sender.sendMessage(Prefixes.INFO + "/nameban <name|ip> [message]");
+            return;
         }
 
         String banner = sender.getName();
         String banee = args[0];
 
-        if(banee.equals(banner))
+        if(banner.equalsIgnoreCase(banee))
         {
-            sender.sendMessage(Prefixes.FAILURE + "Banning yourself is not a great idea.");
-            return true;
+            sender.sendMessage(Prefixes.FAILURE + "Why are you trying to ban yourself?");
+            return;
         }
 
-        if(IP_PATTERN.matcher(banee).matches())
+        if(DeltaBansPlugin.isIp(banee))
         {
-            sender.sendMessage(Prefixes.FAILURE + "This command is for banning specific " +
-                "names. Use /ban <ip> instead.");
-            return true;
+            sender.sendMessage(Prefixes.FAILURE + "Only names can be banned with /nameban");
+            return;
         }
 
-        String message = "You have been BANNED from this server!";
+        String message = defaultBanMessage;
         if(args.length > 1)
         {
-           message = ChatColor.translateAlternateColorCodes('&',
-               String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
+            message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+            message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        String banAsMessage = buildBanMessage(banner, message, banee);
-        deltaRedisApi.publish(Channels.BUNGEECORD, NAME_BAN_CHANNEL, banAsMessage);
-        return true;
+        String channelMessage = buildChannelMessage(banner, message, banee, isSilent);
+        deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.NAME_BAN, channelMessage);
     }
 
-    private String buildBanMessage(String banner, String banMessage, String name)
+    private String buildChannelMessage(String banner, String banMessage, String name, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(banner);
         out.writeUTF(banMessage);
         out.writeUTF(name);
-
+        out.writeBoolean(isSilent);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

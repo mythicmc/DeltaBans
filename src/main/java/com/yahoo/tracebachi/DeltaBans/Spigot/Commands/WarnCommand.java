@@ -18,15 +18,14 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansListener;
-import com.yahoo.tracebachi.DeltaBans.Spigot.PendingWarn;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -35,87 +34,74 @@ import java.util.List;
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
-public class WarnCommand implements TabExecutor
+public class WarnCommand extends DeltaBansCommand
 {
-    private static final String ADD_WARN_CHANNEL = "DB-AddWarning";
-
-    private DeltaBansListener listener;
+    private String defaultWarningMessage;
     private DeltaRedisApi deltaRedisApi;
 
-    public WarnCommand(DeltaBansListener listener, DeltaRedisApi deltaRedisApi)
+    public WarnCommand(String defaultWarningMessage, DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
-        this.listener = listener;
+        super("warn", "DeltaBans.Warn", plugin);
+        this.defaultWarningMessage = defaultWarningMessage;
         this.deltaRedisApi = deltaRedisApi;
     }
 
-    public void shutdown()
+    @Override
+    public void onShutdown()
     {
-        this.listener = null;
+        this.defaultWarningMessage = null;
         this.deltaRedisApi = null;
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args)
     {
-        if(args.length != 0)
-        {
-            String lastArg = args[args.length - 1];
-            return deltaRedisApi.matchStartOfName(lastArg);
-        }
-        return null;
+        String lastArg = args[args.length - 1];
+        return deltaRedisApi.matchStartOfName(lastArg);
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    public void runCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        if(!sender.hasPermission("DeltaBans.Warn"))
+        boolean isSilent = DeltaBansPlugin.isSilent(args);
+        if(isSilent)
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
-            return true;
+            args = DeltaBansPlugin.filterSilent(args);
         }
 
         if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/warn <name> <message>");
-            return true;
+            sender.sendMessage(Prefixes.INFO + "/warn <name> [message]");
+            return;
         }
 
         String warner = sender.getName();
         String name = args[0];
-        String message = "You have been warned!";
+        String message = defaultWarningMessage;
 
         if(name.equalsIgnoreCase(warner))
         {
             sender.sendMessage(Prefixes.FAILURE + "Warning yourself? You have been warned! :)");
-            return true;
+            return;
         }
 
         if(args.length > 1)
         {
-           message = ChatColor.translateAlternateColorCodes('&',
-               String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
+            message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+            message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        PendingWarn pendingWarn = new PendingWarn(sender.getName(), message);
-        if(listener.addPendingWarn(name, pendingWarn))
-        {
-            String addWarnAsMessage = buildAddWarnMessage(warner, name, message);
-            deltaRedisApi.publish(Channels.BUNGEECORD, ADD_WARN_CHANNEL, addWarnAsMessage);
-        }
-        else
-        {
-            sender.sendMessage(Prefixes.FAILURE + "Looks like there is a pending warning for " +
-                Prefixes.input(name));
-        }
-        return true;
+        String channelMessage = buildChannelMessage(warner, name, message, isSilent);
+        deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.WARN, channelMessage);
     }
 
-    private String buildAddWarnMessage(String warner, String name, String message)
+    private String buildChannelMessage(String warner, String name, String message, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(warner);
         out.writeUTF(name);
         out.writeUTF(message);
+        out.writeBoolean(isSilent);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

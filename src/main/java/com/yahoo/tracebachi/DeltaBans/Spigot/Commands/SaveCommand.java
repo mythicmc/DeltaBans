@@ -16,42 +16,36 @@
  */
 package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
-public class SaveBansCommand implements CommandExecutor
+public class SaveCommand extends DeltaBansCommand
 {
-    private static final String SAVE_BANS_CHANNEL = "DB-SaveBans";
-
     private DeltaRedisApi deltaRedisApi;
 
-    public SaveBansCommand(DeltaRedisApi deltaRedisApi)
+    public SaveCommand(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
+        super("deltabanssave", "DeltaBans.Save", plugin);
         this.deltaRedisApi = deltaRedisApi;
     }
 
-    public void shutdown()
+    @Override
+    public void onShutdown()
     {
         this.deltaRedisApi = null;
     }
 
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    @Override
+    public void runCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        if(!sender.hasPermission("DeltaBans.SaveBans"))
-        {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
-            return true;
-        }
-
         String senderName = sender.getName();
-        deltaRedisApi.publish(Channels.BUNGEECORD, SAVE_BANS_CHANNEL, senderName);
-        return true;
+        deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.SAVE, senderName);
     }
 }

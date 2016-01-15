@@ -7,10 +7,19 @@ Database:
   # Password for connecting to the database.
   Password: mc
   # This should have three parts: the main URL, the port number, and database name.
-  URL: localhost:5432/mc18
+  URL: localhost:3306/mc
 
 # Database table used by xAuth to save account information
 xAuth-AccountsTable: accounts
+
+# Default message to show on ban
+DefaultBanMessage: 'You have been BANNED from this server!'
+
+# Default message to show on temp ban
+DefaultTempBanMessage: 'You have been temporarily BANNED from this server!'
+
+# Default message to show on warning
+DefaultWarningMessage: 'You have been warned!'
 
 # Commands to run on a specific number of warnings
 # {name} Name of the player that was warned

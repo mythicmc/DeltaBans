@@ -3,21 +3,24 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
+
+import java.util.List;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 1/14/16.
  */
-public abstract class DeltaBansCommand implements CommandExecutor
+public abstract class DeltaBansCommand implements TabExecutor
 {
-    private final String commandName;
-    private String permission;
-    private DeltaBansPlugin plugin;
+    protected final String commandName;
+    protected final String permission;
+    protected DeltaBansPlugin plugin;
 
-    public DeltaBansCommand(String commandName, DeltaBansPlugin plugin)
+    public DeltaBansCommand(String commandName, String permission, DeltaBansPlugin plugin)
     {
         this.commandName = commandName;
+        this.permission = permission;
         this.plugin = plugin;
         this.plugin.getCommand(commandName).setExecutor(this);
     }
@@ -52,11 +55,10 @@ public abstract class DeltaBansCommand implements CommandExecutor
         return false;
     }
 
-    public void shutdown()
+    public final void shutdown()
     {
         onShutdown();
         unregister();
-        this.permission = null;
         this.plugin = null;
     }
 
@@ -65,9 +67,15 @@ public abstract class DeltaBansCommand implements CommandExecutor
     public abstract void onShutdown();
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args)
+    public List<String> onTabComplete(CommandSender commandSender, Command command, String label, String[] strings)
     {
-        if(!sender.hasPermission(permission))
+        return null;
+    }
+
+    @Override
+    public final boolean onCommand(CommandSender sender, Command command, String label, String[] args)
+    {
+        if(permission != null && !sender.hasPermission(permission))
         {
             sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
         }

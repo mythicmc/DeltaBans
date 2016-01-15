@@ -18,77 +18,71 @@ package com.yahoo.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import com.yahoo.tracebachi.DeltaBans.DeltaBansChannels;
+import com.yahoo.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
 import com.yahoo.tracebachi.DeltaRedis.Shared.Redis.Channels;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.yahoo.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
 
 /**
  * Created by Trace Bachi (tracebachi@yahoo.com, BigBossZee) on 12/16/15.
  */
-public class UnbanCommand implements CommandExecutor
+public class UnbanCommand extends DeltaBansCommand
 {
-    private static final String UNBAN_CHANNEL = "DB-Unban";
-    private static final Pattern IP_PATTERN = Pattern.compile(
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])"
-    );
-
     private DeltaRedisApi deltaRedisApi;
 
-    public UnbanCommand(DeltaRedisApi deltaRedisApi)
+    public UnbanCommand(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
+        super("unban", "DeltaBans.Ban", plugin);
         this.deltaRedisApi = deltaRedisApi;
     }
 
-    public void shutdown()
+    @Override
+    public void onShutdown()
     {
         this.deltaRedisApi = null;
     }
 
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    @Override
+    public void runCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        if(!sender.hasPermission("DeltaBans.Ban"))
+        boolean isSilent = DeltaBansPlugin.isSilent(args);
+        if(isSilent)
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have permission to use this command.");
-            return true;
+            args = DeltaBansPlugin.filterSilent(args);
         }
 
-        if(args.length == 0)
+        if(args.length < 1)
         {
             sender.sendMessage(Prefixes.INFO + "/unban <name|ip>");
-            return true;
+            return;
         }
 
         String banner = sender.getName();
         String banee = args[0];
-        boolean isName = !IP_PATTERN.matcher(banee).matches();
+        boolean isIp = DeltaBansPlugin.isIp(banee);
 
-        if(args[0].equals(banner))
+        if(banee.equals(banner))
         {
             sender.sendMessage(Prefixes.FAILURE + "You are already unbanned.");
-            return true;
+            return;
         }
 
-        deltaRedisApi.publish(Channels.BUNGEECORD, UNBAN_CHANNEL,
-            buildUnbanMessage(sender.getName(), banee, isName));
-        return true;
+        String channelMessage = buildChannelMessage(banner, banee, isIp, isSilent);
+        deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.UNBAN, channelMessage);
     }
 
-    private String buildUnbanMessage(String sender, String banee, boolean isName)
+    private String buildChannelMessage(String sender, String banee, boolean isIp, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(sender);
         out.writeUTF(banee);
-        out.writeBoolean(isName);
-
+        out.writeBoolean(isIp);
+        out.writeBoolean(isSilent);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }
