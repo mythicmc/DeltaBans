@@ -16,38 +16,31 @@ commands:
   nameban:
     description: Allows the user to ban names instead of IPs.
     aliases: [denameban]
-  checkban:
+  banned:
     description: Allows the user to check if names or IPs are banned.
-    aliases: [decheckban]
+    aliases: [debanned]
   warn:
     description: Allows the user to issue warnings.
     aliases: [dewarn]
-  pardon:
+  unwarn:
     description: Allows the user to pardon a single warning.
-    aliases: [depardon]
-  pardonall:
-    description: Allows the user to pardon all warnings.
-    aliases: [depardonall]
-  checkwarn:
-    description: Allows the user to check warnings.
-    aliases: [decheckwarn]
-  savebans:
+    aliases: [deunwarn]
+  rangeban:
+    description: Allows the user to ban an ip range.
+    aliases: [derangeban]
+  deltabanssave:
     description: Allows the user to force save ban and warning files.
 
 permissions:
   DeltaBans.Ban:
     description: Main permission for banning and unbanning.
+  DeltaBans.RangeBan:
+    description: Main permission for range banning.
   DeltaBans.CheckBan:
     description: Permission for checking bans.
-  DeltaBans.CheckBan.Limited:
+  DeltaBans.CheckBan.Extra:
     description: Permission for checking bans (only ban message and banner shown).
   DeltaBans.Warn:
     description: Permission for issuing warnings.
-  DeltaBans.Pardon.All:
-    description: Permission for pardoning all warnings.
-  DeltaBans.Pardon.One:
-    description: Permission for pardoning one warning.
-  DeltaBans.CheckWarn:
-    description: Permission for checking warnings.
   DeltaBans.Save:
     description: Permission for forcing save of ban and warning files.

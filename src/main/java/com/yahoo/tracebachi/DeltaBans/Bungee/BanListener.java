@@ -47,7 +47,7 @@ import java.util.Set;
  */
 public class BanListener implements Listener
 {
-    private final String HIDDEN_IP = "\u00A7k255\u00A7r.\u00A7k255\u00A7r.\u00A7k255\u00A7r.\u00A7k255\u00A7r";
+    private final String HIDDEN_IP = "\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r";
 
     private String permanentBanFormat;
     private String temporaryBanFormat;
@@ -113,18 +113,28 @@ public class BanListener implements Listener
         if(ipBanEntries != null)
         {
             BanEntry entryWithDuration = null;
+            BanEntry ipBanEntry = null;
 
             for(BanEntry entry : ipBanEntries)
             {
-                if(!entry.isDurationComplete())
+                if(entry.hasDuration() && !entry.isDurationComplete())
                 {
                     entryWithDuration = entry;
                 }
+                else
+                {
+                    ipBanEntry = entry;
+                }
             }
 
-            if(entryWithDuration == null)
+            if(ipBanEntry == null && entryWithDuration == null)
             {
                 banStorage.removeUsingIp(address);
+            }
+            else if(ipBanEntry != null)
+            {
+                event.setCancelReason(getKickMessage(ipBanEntry));
+                event.setCancelled(true);
             }
             else
             {
@@ -155,10 +165,16 @@ public class BanListener implements Listener
             if(hasName) name = in.readUTF();
 
             // If an IP is being banned which is already banned, but also has no name
-            if(!hasName && banStorage.isIpBanned(ip))
+            boolean isIpBanned = banStorage.isIpBanned(ip);
+            if(!hasName && isIpBanned)
             {
                 deltaRedisApi.sendMessageToPlayer(event.getSender(), banner,
                     Prefixes.FAILURE + "IP is already banned.");
+            }
+            else if(hasName && isIpBanned && banStorage.isNameBanned(name))
+            {
+                deltaRedisApi.sendMessageToPlayer(event.getSender(), banner,
+                    Prefixes.FAILURE + "Name and IP is already banned.");
             }
             else
             {
@@ -166,7 +182,7 @@ public class BanListener implements Listener
                 banStorage.add(entry);
                 kickOffProxy(name, ip, getKickMessage(entry));
 
-                String announcement = formatBanAnnouncement(banner, name, hasName,
+                String announcement = formatBanAnnouncement(banner, name, !hasName,
                     banMessage, entry.hasDuration(), isSilent);
                 deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
             }
@@ -231,6 +247,30 @@ public class BanListener implements Listener
                 deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
             }
         }
+        else if(channel.equals(DeltaBansChannels.RANGE_BAN))
+        {
+            String banner = in.readUTF();
+            String message = in.readUTF();
+            String start = in.readUTF();
+            String end = in.readUTF();
+            boolean isSilent = in.readBoolean();
+
+            RangeBanEntry entry = new RangeBanEntry(banner, message, start, end);
+            rangeBanStorage.add(entry);
+
+            String announcement = formatRangeBanAnnouncement(banner, start + "-" + end, message, isSilent);
+            deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+        }
+        else if(channel.equals(DeltaBansChannels.RANGE_UNBAN))
+        {
+            String banner = in.readUTF();
+            String ip = in.readUTF();
+            boolean isSilent = in.readBoolean();
+            int count = rangeBanStorage.removeIpRangeBan(ip);
+
+            String announcement = formatRangeUnbanAnnouncement(banner, ip, count, isSilent);
+            deltaRedisApi.publish(Channels.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+        }
     }
 
     private void kickOffProxy(String name, String ip, String message)
@@ -242,7 +282,7 @@ public class BanListener implements Listener
             ProxiedPlayer proxiedPlayer = BungeeCord.getInstance().getPlayer(name);
             if(proxiedPlayer != null)
             {
-                proxiedPlayer.disconnect(componentMessage);
+                proxiedPlayer.disconnect(componentMessage.clone());
             }
         }
 
@@ -250,9 +290,9 @@ public class BanListener implements Listener
         {
             for(ProxiedPlayer player : BungeeCord.getInstance().getPlayers())
             {
-                if(player.getAddress().toString().equals(ip))
+                if(player.getAddress().getAddress().getHostAddress().equals(ip))
                 {
-                    player.disconnect(componentMessage);
+                    player.disconnect(componentMessage.clone());
                 }
             }
         }
@@ -269,12 +309,32 @@ public class BanListener implements Listener
             ChatColor.GOLD + message;
     }
 
+    private String formatRangeBanAnnouncement(String banner, String range, String message, boolean isSilent)
+    {
+        return ((isSilent) ? "!" : "") +
+            ChatColor.GOLD + banner +
+            ChatColor.WHITE + " range-banned " +
+            ChatColor.GOLD + range +
+            ChatColor.WHITE + " for " +
+            ChatColor.GOLD + message;
+    }
+
     private String formatUnbanAnnouncement(String sender, String banee, boolean isIp, boolean isSilent)
     {
         return ((isSilent) ? "!" : "") +
             ChatColor.GOLD + sender +
             ChatColor.WHITE + " unbanned " +
             ChatColor.GOLD + ((isIp) ? HIDDEN_IP : banee);
+    }
+
+    private String formatRangeUnbanAnnouncement(String sender, String ip, int count, boolean isSilent)
+    {
+        return ((isSilent) ? "!" : "") +
+            ChatColor.GOLD + sender +
+            ChatColor.WHITE + " unbanned " +
+            ChatColor.GOLD + count +
+            ChatColor.WHITE + " IP ranges overlapping with " +
+            ChatColor.GOLD + ip;
     }
 
     private String getKickMessage(BanEntry entry)

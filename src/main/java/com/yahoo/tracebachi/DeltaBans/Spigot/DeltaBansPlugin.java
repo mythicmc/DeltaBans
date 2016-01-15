@@ -37,6 +37,8 @@ public class DeltaBansPlugin extends JavaPlugin
     private BanCommand banCommand;
     private BannedCommand bannedCommand;
     private NameBanCommand nameBanCommand;
+    private RangeBanCommand rangeBanCommand;
+    private RangeUnbanCommand rangeUnbanCommand;
     private SaveCommand saveCommand;
     private TempBanCommand tempBanCommand;
     private UnbanCommand unbanCommand;
@@ -65,6 +67,7 @@ public class DeltaBansPlugin extends JavaPlugin
         String defaultBanMessage = getConfig().getString("DefaultBanMessage");
         String defaultTempBanMessage = getConfig().getString("DefaultTempBanMessage");
         String defaultWarningMessage = getConfig().getString("DefaultWarningMessage");
+        String defaultRangeBanMessage = getConfig().getString("DefaultRangeBanMessage");
         ipCheckQuery = "SELECT lastloginip FROM `" + accountTable + "` WHERE playername = ?;";
 
         DeltaRedisPlugin plugin = (DeltaRedisPlugin) getServer().getPluginManager().getPlugin("DeltaRedis");
@@ -88,29 +91,32 @@ public class DeltaBansPlugin extends JavaPlugin
         banCommand = new BanCommand(defaultBanMessage, deltaRedisApi, this);
         banCommand.register();
 
-        tempBanCommand = new TempBanCommand(defaultTempBanMessage, deltaRedisApi, this);
-        tempBanCommand.register();
+        bannedCommand = new BannedCommand(deltaRedisApi, this);
+        bannedCommand.register();
 
         nameBanCommand = new NameBanCommand(defaultBanMessage, deltaRedisApi, this);
         nameBanCommand.register();
 
+        rangeBanCommand = new RangeBanCommand(defaultRangeBanMessage, deltaRedisApi, this);
+        rangeBanCommand.register();
+
+        rangeUnbanCommand = new RangeUnbanCommand(deltaRedisApi, this);
+        rangeUnbanCommand.register();
+
+        saveCommand = new SaveCommand(deltaRedisApi, this);
+        saveCommand.register();
+
+        tempBanCommand = new TempBanCommand(defaultTempBanMessage, deltaRedisApi, this);
+        tempBanCommand.register();
+
         unbanCommand = new UnbanCommand(deltaRedisApi, this);
         unbanCommand.register();
-
-        bannedCommand = new BannedCommand(deltaRedisApi, this);
-        bannedCommand.register();
-
-        warnCommand = new WarnCommand(defaultWarningMessage, deltaRedisApi, this);
-        warnCommand.register();
 
         unwarnCommand = new UnwarnCommand(deltaRedisApi, this);
         unwarnCommand.register();
 
-        bannedCommand = new BannedCommand(deltaRedisApi, this);
-        bannedCommand.register();
-
-        saveCommand = new SaveCommand(deltaRedisApi, this);
-        saveCommand.register();
+        warnCommand = new WarnCommand(defaultWarningMessage, deltaRedisApi, this);
+        warnCommand.register();
     }
 
     @Override
@@ -118,16 +124,10 @@ public class DeltaBansPlugin extends JavaPlugin
     {
         deltaBansListener = null;
 
-        if(saveCommand != null)
+        if(warnCommand != null)
         {
-            saveCommand.shutdown();
-            saveCommand = null;
-        }
-
-        if(bannedCommand != null)
-        {
-            bannedCommand.shutdown();
-            bannedCommand = null;
+            warnCommand.shutdown();
+            warnCommand = null;
         }
 
         if(unwarnCommand != null)
@@ -136,22 +136,10 @@ public class DeltaBansPlugin extends JavaPlugin
             unwarnCommand = null;
         }
 
-        if(warnCommand != null)
+        if(unbanCommand != null)
         {
-            warnCommand.shutdown();
-            warnCommand = null;
-        }
-
-        if(bannedCommand != null)
-        {
-            bannedCommand.shutdown();
-            bannedCommand = null;
-        }
-
-        if(nameBanCommand != null)
-        {
-            nameBanCommand.shutdown();
-            nameBanCommand = null;
+            unbanCommand.shutdown();
+            unbanCommand = null;
         }
 
         if(tempBanCommand != null)
@@ -160,10 +148,34 @@ public class DeltaBansPlugin extends JavaPlugin
             tempBanCommand = null;
         }
 
-        if(unbanCommand != null)
+        if(saveCommand != null)
         {
-            unbanCommand.shutdown();
-            unbanCommand = null;
+            saveCommand.shutdown();
+            saveCommand = null;
+        }
+
+        if(rangeUnbanCommand != null)
+        {
+            rangeUnbanCommand.shutdown();
+            rangeUnbanCommand = null;
+        }
+
+        if(rangeBanCommand != null)
+        {
+            rangeBanCommand.shutdown();
+            rangeBanCommand = null;
+        }
+
+        if(nameBanCommand != null)
+        {
+            nameBanCommand.shutdown();
+            nameBanCommand = null;
+        }
+
+        if(bannedCommand != null)
+        {
+            bannedCommand.shutdown();
+            bannedCommand = null;
         }
 
         if(banCommand != null)

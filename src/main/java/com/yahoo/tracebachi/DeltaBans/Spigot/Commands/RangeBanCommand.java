@@ -44,7 +44,7 @@ public class RangeBanCommand extends DeltaBansCommand
 
     public RangeBanCommand(String defaultRangeBanMessage, DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
     {
-        super("ban", "DeltaBans.Ban", plugin);
+        super("rangeban", "DeltaBans.RangeBan", plugin);
         this.defaultRangeBanMessage = defaultRangeBanMessage;
         this.deltaRedisApi = deltaRedisApi;
     }
@@ -109,29 +109,24 @@ public class RangeBanCommand extends DeltaBansCommand
         else if(firstAsLong > secondAsLong)
         {
             String channelMessage = buildChannelMessage(banner, message,
-                splitIpRange[1], secondAsLong,
-                splitIpRange[0], firstAsLong, isSilent);
+                splitIpRange[1], splitIpRange[0], isSilent);
             deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.RANGE_BAN, channelMessage);
         }
         else
         {
             String channelMessage = buildChannelMessage(banner, message,
-                splitIpRange[1], secondAsLong,
-                splitIpRange[0], firstAsLong, isSilent);
+                splitIpRange[0], splitIpRange[1], isSilent);
             deltaRedisApi.publish(Channels.BUNGEECORD, DeltaBansChannels.RANGE_BAN, channelMessage);
         }
     }
 
-    private String buildChannelMessage(String name, String message, String first, long firstAsLong,
-        String second, long secondAsLong, boolean isSilent)
+    private String buildChannelMessage(String name, String message, String start, String end, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(name);
         out.writeUTF(message);
-        out.writeUTF(first);
-        out.writeUTF(Long.toHexString(firstAsLong));
-        out.writeUTF(second);
-        out.writeUTF(Long.toHexString(secondAsLong));
+        out.writeUTF(start);
+        out.writeUTF(end);
         out.writeBoolean(isSilent);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }

@@ -146,6 +146,7 @@ public class GeneralListener implements Listener
         {
             builder.append("\n");
             builder.append(" - ").append(entry.getMessage());
+            builder.append(" (").append(entry.getWarner()).append(")");
         }
 
         return builder.toString();

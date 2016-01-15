@@ -61,6 +61,37 @@ public class BanStorage
         }
     }
 
+    public synchronized void remove(BanEntry ban)
+    {
+        Preconditions.checkNotNull(ban, "Ban cannot be null.");
+
+        // Remove from the main ban set
+        banSet.remove(ban);
+
+        // If the ban has a name, add it to the name map
+        if(ban.hasName())
+        {
+            nameMap.remove(ban.getName());
+        }
+
+        // If the ban has an ip, add it to the ip map
+        if(ban.hasIp())
+        {
+            Set<BanEntry> bansOnIp = ipMap.get(ban.getIp());
+            if(bansOnIp != null)
+            {
+                // Remove the ban from the set
+                bansOnIp.remove(ban);
+
+                if(bansOnIp.size() == 0)
+                {
+                    // Remove all the now-empty list
+                    ipMap.remove(ban.getIp());
+                }
+            }
+        }
+    }
+
     public synchronized Set<BanEntry> removeUsingIp(String ip)
     {
         Preconditions.checkNotNull(ip, "IP cannot be null.");

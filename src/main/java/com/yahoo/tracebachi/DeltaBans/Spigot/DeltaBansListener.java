@@ -81,15 +81,21 @@ public class DeltaBansListener implements Listener
         {
             String message = event.getMessage();
             boolean isSilent = message.startsWith("!");
-            message = message.substring(1);
 
-            for(Player player : Bukkit.getOnlinePlayers())
+            if(isSilent)
             {
-                if(isSilent && player.hasPermission("DeltaBans.SeeSilent"))
+                message = message.substring(1);
+                for(Player player : Bukkit.getOnlinePlayers())
                 {
-                    player.sendMessage("[Silent] " + message);
+                    if(player.hasPermission("DeltaBans.SeeSilent"))
+                    {
+                        player.sendMessage("[Silent] " + message);
+                    }
                 }
-                else
+            }
+            else
+            {
+                for(Player player : Bukkit.getOnlinePlayers())
                 {
                     player.sendMessage(message);
                 }

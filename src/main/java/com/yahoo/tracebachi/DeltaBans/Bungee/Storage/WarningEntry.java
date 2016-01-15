@@ -24,18 +24,25 @@ import com.google.gson.JsonObject;
  */
 public class WarningEntry
 {
+    private final String warner;
     private final String message;
     private final long createdAt;
 
-    public WarningEntry(String message)
+    public WarningEntry(String warner, String message)
     {
-        this(message, System.currentTimeMillis());
+        this(warner, message, System.currentTimeMillis());
     }
 
-    public WarningEntry(String message, long createdAt)
+    public WarningEntry(String warner, String message, long createdAt)
     {
+        this.warner = warner;
         this.message = message;
         this.createdAt = createdAt;
+    }
+
+    public String getWarner()
+    {
+        return warner;
     }
 
     public String getMessage()
@@ -50,21 +57,23 @@ public class WarningEntry
 
     public static WarningEntry fromJson(JsonObject object)
     {
+        JsonElement warner = object.get("warner");
         JsonElement message = object.get("message");
         JsonElement createdAt = object.get("created_at");
 
-        if(message == null || createdAt == null)
+        if(warner == null || message == null || createdAt == null)
         {
             throw new IllegalArgumentException("Warning is not properly formatted:\n" +
                 object.toString());
         }
 
-        return new WarningEntry(message.getAsString(), createdAt.getAsLong());
+        return new WarningEntry(warner.getAsString(), message.getAsString(), createdAt.getAsLong());
     }
 
     public JsonObject toJson()
     {
         JsonObject object = new JsonObject();
+        object.addProperty("warner", warner);
         object.addProperty("message", message);
         object.addProperty("created_at", createdAt);
         return object;

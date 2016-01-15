@@ -17,6 +17,7 @@
 package com.yahoo.tracebachi.DeltaBans.Bungee.Storage;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Range;
 import com.google.gson.JsonArray;
 import com.yahoo.tracebachi.DeltaBans.DeltaBansUtils;
 
@@ -47,6 +48,24 @@ public class RangeBanStorage
             }
         }
         return null;
+    }
+
+    public synchronized int removeIpRangeBan(String ip)
+    {
+        int count = 0;
+        long ipAsLong = DeltaBansUtils.convertIpToLong(ip);
+
+        ListIterator<RangeBanEntry> iterator = rangeBanList.listIterator();
+        while(iterator.hasNext())
+        {
+            RangeBanEntry entry = iterator.next();
+            if(ipAsLong >= entry.getStartAddressLong() && ipAsLong <= entry.getEndAddressLong())
+            {
+                iterator.remove();
+                count++;
+            }
+        }
+        return count;
     }
 
     public synchronized JsonArray toJson()

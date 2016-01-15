@@ -65,7 +65,7 @@ public class WarningListener implements Listener
             String name = in.readUTF();
             String message = in.readUTF();
             boolean isSilent = in.readBoolean();
-            int count = warningStorage.add(name, new WarningEntry(message));
+            int count = warningStorage.add(name, new WarningEntry(warner, message));
 
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF(warner);
