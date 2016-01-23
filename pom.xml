@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.yahoo.tracebachi</groupId>
+    <groupId>com.gmail.tracebachi</groupId>
     <artifactId>DeltaBans</artifactId>
-    <version>1.2</version>
+    <version>1.3</version>
 
     <repositories>
         <repository>
@@ -33,9 +33,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.yahoo.tracebachi</groupId>
+            <groupId>com.gmail.tracebachi</groupId>
             <artifactId>DeltaRedis</artifactId>
-            <version>1.4</version>
+            <version>1.5</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

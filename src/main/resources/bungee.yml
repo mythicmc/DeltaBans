@@ -1,5 +1,5 @@
 name: DeltaBans
-main: com.yahoo.tracebachi.DeltaBans.Bungee.DeltaBansPlugin
+main: com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPlugin
 version: 1.2
-author: Trace Bachi (tracebachi@yahoo.com, BigBossZee)
+author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
 depends: [DeltaRedis]
