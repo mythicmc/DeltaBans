@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class DeltaBansPlugin extends Plugin
+public class DeltaBans extends Plugin
 {
     private Configuration config;
     private BanStorage banStorage;

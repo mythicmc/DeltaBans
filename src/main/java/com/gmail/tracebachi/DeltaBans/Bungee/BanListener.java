@@ -24,8 +24,8 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
-import com.gmail.tracebachi.DeltaRedis.Bungee.Prefixes;
-import com.gmail.tracebachi.DeltaRedis.Shared.Redis.Servers;
+import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import net.md_5.bungee.BungeeCord;
@@ -57,7 +57,7 @@ public class BanListener implements Listener
     private Set<String> rangeBanWhitelist;
     private DeltaRedisApi deltaRedisApi;
 
-    public BanListener(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
+    public BanListener(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
         this.permanentBanFormat = plugin.getPermanentBanFormat();
         this.temporaryBanFormat = plugin.getTemporaryBanFormat();

@@ -1,13 +1,7 @@
 # DeltaBans Configuration File
 
-# MySQL connection information
-Database:
-  # Username for connecting to the database.
-  Username: mc
-  # Password for connecting to the database.
-  Password: mc
-  # This should have three parts: the main URL, the port number, and database name.
-  URL: localhost:3306/mc
+# DbShare Database name
+Database: Main
 
 # Database table used by xAuth to save account information
 xAuth-AccountsTable: accounts

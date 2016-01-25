@@ -18,10 +18,10 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
-import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
-import com.gmail.tracebachi.DeltaRedis.Shared.Redis.Servers;
+import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
+import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.gmail.tracebachi.DeltaRedis.Spigot.Prefixes;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
@@ -40,7 +40,7 @@ public class NameBanCommand extends DeltaBansCommand
     private String defaultBanMessage;
     private DeltaRedisApi deltaRedisApi;
 
-    public NameBanCommand(String defaultBanMessage, DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
+    public NameBanCommand(String defaultBanMessage, DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
         super("nameban", "DeltaBans.Ban", plugin);
         this.defaultBanMessage = defaultBanMessage;

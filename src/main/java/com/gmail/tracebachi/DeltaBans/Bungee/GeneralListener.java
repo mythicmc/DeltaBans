@@ -24,7 +24,7 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
-import com.gmail.tracebachi.DeltaRedis.Bungee.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import net.md_5.bungee.api.plugin.Listener;
@@ -42,9 +42,9 @@ public class GeneralListener implements Listener
     private BanStorage banStorage;
     private WarningStorage warningStorage;
     private DeltaRedisApi deltaRedisApi;
-    private DeltaBansPlugin plugin;
+    private DeltaBans plugin;
 
-    public GeneralListener(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
+    public GeneralListener(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
         this.banStorage = plugin.getBanStorage();
         this.warningStorage = plugin.getWarningStorage();

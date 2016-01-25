@@ -17,8 +17,8 @@
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
-import com.gmail.tracebachi.DeltaRedis.Shared.Redis.Servers;
+import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
+import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -30,7 +30,7 @@ public class SaveCommand extends DeltaBansCommand
 {
     private DeltaRedisApi deltaRedisApi;
 
-    public SaveCommand(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
+    public SaveCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
         super("deltabanssave", "DeltaBans.Save", plugin);
         this.deltaRedisApi = deltaRedisApi;

@@ -1,8 +1,8 @@
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
+import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
+import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
-import com.gmail.tracebachi.DeltaRedis.Spigot.Prefixes;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -16,9 +16,9 @@ public abstract class DeltaBansCommand implements TabExecutor, Shutdownable
 {
     protected final String commandName;
     protected final String permission;
-    protected DeltaBansPlugin plugin;
+    protected DeltaBans plugin;
 
-    public DeltaBansCommand(String commandName, String permission, DeltaBansPlugin plugin)
+    public DeltaBansCommand(String commandName, String permission, DeltaBans plugin)
     {
         this.commandName = commandName;
         this.permission = permission;

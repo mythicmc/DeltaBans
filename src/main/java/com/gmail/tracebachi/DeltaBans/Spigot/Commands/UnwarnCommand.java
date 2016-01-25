@@ -18,10 +18,10 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
-import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
-import com.gmail.tracebachi.DeltaRedis.Shared.Redis.Servers;
+import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
+import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.gmail.tracebachi.DeltaRedis.Spigot.Prefixes;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
@@ -37,7 +37,7 @@ public class UnwarnCommand extends DeltaBansCommand
 {
     private DeltaRedisApi deltaRedisApi;
 
-    public UnwarnCommand(DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
+    public UnwarnCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
         super("unwarn", "DeltaBans.Warn", plugin);
         this.deltaRedisApi = deltaRedisApi;

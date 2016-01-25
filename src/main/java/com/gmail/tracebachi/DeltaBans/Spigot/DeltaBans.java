@@ -16,6 +16,7 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot;
 
+import com.gmail.tracebachi.DbShare.DbShare;
 import com.gmail.tracebachi.DeltaBans.Spigot.Commands.*;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedis;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
@@ -26,12 +27,10 @@ import java.sql.*;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class DeltaBansPlugin extends JavaPlugin
+public class DeltaBans extends JavaPlugin
 {
     private boolean debug;
-    private String username;
-    private String password;
-    private String url;
+    private String databaseName;
     private String ipCheckQuery;
 
     private BanCommand banCommand;
@@ -47,8 +46,6 @@ public class DeltaBansPlugin extends JavaPlugin
     private WarnCommand warnCommand;
     private DeltaBansListener deltaBansListener;
 
-    private Connection connection;
-
     @Override
     public void onLoad()
     {
@@ -60,9 +57,7 @@ public class DeltaBansPlugin extends JavaPlugin
     {
         reloadConfig();
         debug = getConfig().getBoolean("DebugMode", false);
-        username = getConfig().getString("Database.Username");
-        password = getConfig().getString("Database.Password");
-        url = getConfig().getString("Database.URL");
+        databaseName = getConfig().getString("Database");
 
         String accountTable = getConfig().getString("xAuth-AccountsTable");
         String defaultBanMessage = getConfig().getString("DefaultBanMessage");
@@ -76,7 +71,7 @@ public class DeltaBansPlugin extends JavaPlugin
 
         try
         {
-            updateConnection();
+            testConnection();
         }
         catch(SQLException e)
         {
@@ -193,22 +188,12 @@ public class DeltaBansPlugin extends JavaPlugin
             banCommand.shutdown();
             banCommand = null;
         }
-
-        try
-        {
-            connection.close();
-        }
-        catch(SQLException e)
-        {
-            e.printStackTrace();
-        }
     }
 
     public String getIpOfPlayer(String playerName) throws IllegalArgumentException
     {
-        try
+        try(Connection connection = DbShare.getDataSource(databaseName).getConnection())
         {
-            updateConnection();
             try(PreparedStatement statement = connection.prepareStatement(ipCheckQuery))
             {
                 statement.setString(1, playerName);
@@ -251,20 +236,14 @@ public class DeltaBansPlugin extends JavaPlugin
         }
     }
 
-    private void updateConnection() throws SQLException
+    private void testConnection() throws SQLException
     {
-        if(connection == null)
+        try(Connection connection = DbShare.getDataSource(databaseName).getConnection())
         {
-            debug("Establishing connection with DB for xAuth table ...");
-            connection = DriverManager.getConnection("jdbc:mysql://" + url, username, password);
-            debug("Establishing connection with DB for xAuth table ... Done");
-        }
-        else if(!connection.isValid(1))
-        {
-            debug("Reconnecting with DB for xAuth table ...");
-            connection.close();
-            connection = DriverManager.getConnection("jdbc:mysql://" + url, username, password);
-            debug("Reconnecting with DB for xAuth table ... Done");
+            try(Statement statement = connection.createStatement())
+            {
+                statement.execute("SELECT 1;");
+            }
         }
     }
 }

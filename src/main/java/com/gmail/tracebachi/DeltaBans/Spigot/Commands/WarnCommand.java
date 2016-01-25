@@ -18,10 +18,10 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
-import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
-import com.gmail.tracebachi.DeltaRedis.Shared.Redis.Servers;
+import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
+import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.gmail.tracebachi.DeltaRedis.Spigot.Prefixes;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
@@ -40,7 +40,7 @@ public class WarnCommand extends DeltaBansCommand
     private String defaultWarningMessage;
     private DeltaRedisApi deltaRedisApi;
 
-    public WarnCommand(String defaultWarningMessage, DeltaRedisApi deltaRedisApi, DeltaBansPlugin plugin)
+    public WarnCommand(String defaultWarningMessage, DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
         super("warn", "DeltaBans.Warn", plugin);
         this.defaultWarningMessage = defaultWarningMessage;

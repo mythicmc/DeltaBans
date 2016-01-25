@@ -41,10 +41,10 @@ public class DeltaBansListener implements Listener
     private static final Pattern NAME_PATTERN = Pattern.compile("\\{name\\}");
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message\\}");
 
-    private DeltaBansPlugin plugin;
+    private DeltaBans plugin;
     private HashMap<Integer, List<String>> warnCommandMap = new HashMap<>();
 
-    public DeltaBansListener(DeltaBansPlugin plugin)
+    public DeltaBansListener(DeltaBans plugin)
     {
         this.plugin = plugin;
         ConfigurationSection warningSection = plugin.getConfig().getConfigurationSection("WarningCommands");

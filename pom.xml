@@ -35,7 +35,13 @@
         <dependency>
             <groupId>com.gmail.tracebachi</groupId>
             <artifactId>DeltaRedis</artifactId>
-            <version>1.5</version>
+            <version>1.6</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.gmail.tracebachi</groupId>
+            <artifactId>DbShare</artifactId>
+            <version>1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
