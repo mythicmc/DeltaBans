@@ -25,7 +25,9 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
 import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import net.md_5.bungee.BungeeCord;
@@ -45,7 +47,7 @@ import java.util.Set;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class BanListener implements Listener
+public class BanListener implements Listener, Registerable, Shutdownable
 {
     private final String HIDDEN_IP = "\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r";
 
@@ -56,6 +58,7 @@ public class BanListener implements Listener
     private RangeBanStorage rangeBanStorage;
     private Set<String> rangeBanWhitelist;
     private DeltaRedisApi deltaRedisApi;
+    private DeltaBans plugin;
 
     public BanListener(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
@@ -66,8 +69,22 @@ public class BanListener implements Listener
         this.rangeBanStorage = plugin.getRangeBanStorage();
         this.rangeBanWhitelist = plugin.getRangeBanWhitelist();
         this.deltaRedisApi = deltaRedisApi;
+        this.plugin = plugin;
     }
 
+    @Override
+    public void register()
+    {
+        plugin.getProxy().getPluginManager().registerListener(plugin, this);
+    }
+
+    @Override
+    public void unregister()
+    {
+        plugin.getProxy().getPluginManager().unregisterListener(this);
+    }
+
+    @Override
     public void shutdown()
     {
         this.permanentBanFormat = null;
@@ -188,8 +205,13 @@ public class BanListener implements Listener
                 banStorage.add(entry);
                 kickOffProxy(name, ip, getKickMessage(entry));
 
-                String announcement = formatBanAnnouncement(banner, name, !hasName,
-                    banMessage, entry.hasDuration(), isSilent);
+                String announcement = formatBanAnnouncement(
+                    banner,
+                    (hasName) ? name : ip,
+                    !hasName,
+                    banMessage,
+                    entry.hasDuration(),
+                    isSilent);
                 deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
             }
         }
@@ -341,7 +363,7 @@ public class BanListener implements Listener
         return ((isSilent) ? "!" : "") +
             ChatColor.GOLD + banner +
             ChatColor.WHITE + ((isTemporary) ? " temp-banned " : " banned ") +
-            ChatColor.GOLD + ((isIp) ? HIDDEN_IP : banee) +
+            ChatColor.GOLD + ((isIp && !isSilent) ? HIDDEN_IP : banee) +
             ChatColor.WHITE + " for " +
             ChatColor.GOLD + message;
     }
@@ -361,7 +383,7 @@ public class BanListener implements Listener
         return ((isSilent) ? "!" : "") +
             ChatColor.GOLD + sender +
             ChatColor.WHITE + " unbanned " +
-            ChatColor.GOLD + ((isIp) ? HIDDEN_IP : banee);
+            ChatColor.GOLD + ((isIp && !isSilent) ? HIDDEN_IP : banee);
     }
 
     private String formatRangeUnbanAnnouncement(String sender, String ip, int count, boolean isSilent)

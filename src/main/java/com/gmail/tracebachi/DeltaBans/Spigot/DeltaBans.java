@@ -123,71 +123,38 @@ public class DeltaBans extends JavaPlugin
     {
         deltaBansListener = null;
 
-        if(warnCommand != null)
-        {
-            warnCommand.shutdown();
-            warnCommand = null;
-        }
+        warnCommand.shutdown();
+        warnCommand = null;
 
-        if(unwarnCommand != null)
-        {
-            unwarnCommand.shutdown();
-            unwarnCommand = null;
-        }
+        unwarnCommand.shutdown();
+        unwarnCommand = null;
 
-        if(unbanCommand != null)
-        {
-            unbanCommand.shutdown();
-            unbanCommand = null;
-        }
+        unbanCommand.shutdown();
+        unbanCommand = null;
 
-        if(tempBanCommand != null)
-        {
-            tempBanCommand.shutdown();
-            tempBanCommand = null;
-        }
+        tempBanCommand.shutdown();
+        tempBanCommand = null;
 
-        if(saveCommand != null)
-        {
-            saveCommand.shutdown();
-            saveCommand = null;
-        }
+        saveCommand.shutdown();
+        saveCommand = null;
 
-        if(rangeUnbanCommand != null)
-        {
-            rangeUnbanCommand.shutdown();
-            rangeUnbanCommand = null;
-        }
+        rangeUnbanCommand.shutdown();
+        rangeUnbanCommand = null;
 
-        if(rangeWhitelistCommand != null)
-        {
-            rangeWhitelistCommand.shutdown();
-            rangeWhitelistCommand = null;
-        }
+        rangeWhitelistCommand.shutdown();
+        rangeWhitelistCommand = null;
 
-        if(rangeBanCommand != null)
-        {
-            rangeBanCommand.shutdown();
-            rangeBanCommand = null;
-        }
+        rangeBanCommand.shutdown();
+        rangeBanCommand = null;
 
-        if(nameBanCommand != null)
-        {
-            nameBanCommand.shutdown();
-            nameBanCommand = null;
-        }
+        nameBanCommand.shutdown();
+        nameBanCommand = null;
 
-        if(bannedCommand != null)
-        {
-            bannedCommand.shutdown();
-            bannedCommand = null;
-        }
+        bannedCommand.shutdown();
+        bannedCommand = null;
 
-        if(banCommand != null)
-        {
-            banCommand.shutdown();
-            banCommand = null;
-        }
+        banCommand.shutdown();
+        banCommand = null;
     }
 
     public String getIpOfPlayer(String playerName) throws IllegalArgumentException

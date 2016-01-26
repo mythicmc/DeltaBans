@@ -18,35 +18,62 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
+import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class SaveCommand extends DeltaBansCommand
+public class SaveCommand implements CommandExecutor, Registerable, Shutdownable
 {
     private DeltaRedisApi deltaRedisApi;
+    private DeltaBans plugin;
 
     public SaveCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        super("deltabanssave", "DeltaBans.Save", plugin);
         this.deltaRedisApi = deltaRedisApi;
+        this.plugin = plugin;
+    }
+
+    @Override
+    public void register()
+    {
+        plugin.getCommand("deltabanssave").setExecutor(this);
+    }
+
+    @Override
+    public void unregister()
+    {
+        plugin.getCommand("deltabanssave").setExecutor(null);
     }
 
     @Override
     public void shutdown()
     {
-        this.deltaRedisApi = null;
-        super.shutdown();
+        unregister();
+        deltaRedisApi = null;
+        plugin = null;
     }
 
     @Override
-    public void runCommand(CommandSender sender, Command command, String label, String[] args)
+    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
+        if(!sender.hasPermission("DeltaBans.SaveBans"))
+        {
+            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
+                Prefixes.input("DeltaBans.SaveBans") + " permission.");
+            return true;
+        }
+
         String senderName = sender.getName();
         deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.SAVE, senderName);
+
+        return true;
     }
 }

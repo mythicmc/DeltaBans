@@ -25,6 +25,8 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
 import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import net.md_5.bungee.api.plugin.Listener;
@@ -37,7 +39,7 @@ import java.util.Set;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class GeneralListener implements Listener
+public class GeneralListener implements Listener, Registerable, Shutdownable
 {
     private BanStorage banStorage;
     private WarningStorage warningStorage;
@@ -52,12 +54,25 @@ public class GeneralListener implements Listener
         this.plugin = plugin;
     }
 
+    @Override
+    public void register()
+    {
+        plugin.getProxy().getPluginManager().registerListener(plugin, this);
+    }
+
+    @Override
+    public void unregister()
+    {
+        plugin.getProxy().getPluginManager().unregisterListener(this);
+    }
+
+    @Override
     public void shutdown()
     {
-        this.banStorage = null;
-        this.warningStorage = null;
-        this.deltaRedisApi = null;
-        this.plugin = null;
+        banStorage = null;
+        warningStorage = null;
+        deltaRedisApi = null;
+        plugin = null;
     }
 
     @EventHandler

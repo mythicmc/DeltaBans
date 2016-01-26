@@ -22,7 +22,9 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
 import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
@@ -35,21 +37,37 @@ import java.nio.charset.StandardCharsets;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class WarningListener implements Listener
+public class WarningListener implements Listener, Registerable, Shutdownable
 {
     private WarningStorage warningStorage;
     private DeltaRedisApi deltaRedisApi;
+    private DeltaBans plugin;
 
-    public WarningListener(DeltaRedisApi deltaRedisApi, WarningStorage warningStorage)
+    public WarningListener(DeltaRedisApi deltaRedisApi, WarningStorage warningStorage, DeltaBans plugin)
     {
         this.warningStorage = warningStorage;
         this.deltaRedisApi = deltaRedisApi;
+        this.plugin = plugin;
     }
 
+    @Override
+    public void register()
+    {
+        plugin.getProxy().getPluginManager().registerListener(plugin, this);
+    }
+
+    @Override
+    public void unregister()
+    {
+        plugin.getProxy().getPluginManager().unregisterListener(this);
+    }
+
+    @Override
     public void shutdown()
     {
-        this.warningStorage = null;
-        this.deltaRedisApi = null;
+        warningStorage = null;
+        deltaRedisApi = null;
+        plugin = null;
     }
 
     @EventHandler

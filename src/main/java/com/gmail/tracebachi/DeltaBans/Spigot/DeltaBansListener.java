@@ -85,20 +85,11 @@ public class DeltaBansListener implements Listener
             if(isSilent)
             {
                 message = message.substring(1);
-                for(Player player : Bukkit.getOnlinePlayers())
-                {
-                    if(player.hasPermission("DeltaBans.SeeSilent"))
-                    {
-                        player.sendMessage("[Silent] " + message);
-                    }
-                }
+                Bukkit.broadcast(message, "DeltaBans.SeeSilent");
             }
             else
             {
-                for(Player player : Bukkit.getOnlinePlayers())
-                {
-                    player.sendMessage(message);
-                }
+                Bukkit.broadcastMessage(message);
             }
         }
         else if(event.getChannel().equals(DeltaBansChannels.WARN))

@@ -69,11 +69,13 @@ public class DeltaBans extends Plugin
         DeltaRedisApi deltaRedisApi = deltaRedisPlugin.getDeltaRedisApi();
 
         banListener = new BanListener(deltaRedisApi, this);
-        getProxy().getPluginManager().registerListener(this, banListener);
-        warningListener = new WarningListener(deltaRedisApi, warningStorage);
-        getProxy().getPluginManager().registerListener(this, warningListener);
+        banListener.register();
+
+        warningListener = new WarningListener(deltaRedisApi, warningStorage, this);
+        warningListener.register();
+
         generalListener = new GeneralListener(deltaRedisApi, this);
-        getProxy().getPluginManager().registerListener(this, generalListener);
+        generalListener.register();
 
         getProxy().getScheduler().schedule(this, this::writeBansAndWarnings,
             minutesPerBanSave, minutesPerBanSave, TimeUnit.MINUTES);
@@ -87,26 +89,14 @@ public class DeltaBans extends Plugin
     {
         getProxy().getScheduler().cancel(this);
 
-        if(generalListener != null)
-        {
-            getProxy().getPluginManager().unregisterListener(generalListener);
-            generalListener.shutdown();
-            generalListener = null;
-        }
+        generalListener.shutdown();
+        generalListener = null;
 
-        if(warningListener != null)
-        {
-            getProxy().getPluginManager().unregisterListener(warningListener);
-            warningListener.shutdown();
-            warningListener = null;
-        }
+        warningListener.shutdown();
+        warningListener = null;
 
-        if(banListener != null)
-        {
-            getProxy().getPluginManager().unregisterListener(banListener);
-            banListener.shutdown();
-            banListener = null;
-        }
+        banListener.shutdown();
+        banListener = null;
 
         if(banStorage != null && warningStorage != null && rangeBanStorage != null)
         {

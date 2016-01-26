@@ -20,13 +20,16 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -35,35 +38,51 @@ import java.util.List;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class NameBanCommand extends DeltaBansCommand
+public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
 {
     private String defaultBanMessage;
     private DeltaRedisApi deltaRedisApi;
+    private DeltaBans plugin;
 
     public NameBanCommand(String defaultBanMessage, DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        super("nameban", "DeltaBans.Ban", plugin);
         this.defaultBanMessage = defaultBanMessage;
         this.deltaRedisApi = deltaRedisApi;
+        this.plugin = plugin;
+    }
+
+    @Override
+    public void register()
+    {
+        plugin.getCommand("nameban").setExecutor(this);
+        plugin.getCommand("nameban").setTabCompleter(this);
+    }
+
+    @Override
+    public void unregister()
+    {
+        plugin.getCommand("nameban").setExecutor(null);
+        plugin.getCommand("nameban").setTabCompleter(null);
     }
 
     @Override
     public void shutdown()
     {
-        this.deltaRedisApi = null;
-        this.defaultBanMessage = null;
-        super.shutdown();
+        unregister();
+        defaultBanMessage = null;
+        deltaRedisApi = null;
+        plugin = null;
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args)
+    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
     {
         String lastArg = args[args.length - 1];
         return deltaRedisApi.matchStartOfPlayerName(lastArg);
     }
 
     @Override
-    public void runCommand(CommandSender sender, Command command, String label, String[] args)
+    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
         if(isSilent)
@@ -74,7 +93,14 @@ public class NameBanCommand extends DeltaBansCommand
         if(args.length < 1)
         {
             sender.sendMessage(Prefixes.INFO + "/nameban <name|ip> [message]");
-            return;
+            return true;
+        }
+
+        if(!sender.hasPermission("DeltaBans.Ban"))
+        {
+            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
+                Prefixes.input("DeltaBans.Ban") + " permission.");
+            return true;
         }
 
         String banner = sender.getName();
@@ -83,13 +109,13 @@ public class NameBanCommand extends DeltaBansCommand
         if(banner.equalsIgnoreCase(banee))
         {
             sender.sendMessage(Prefixes.FAILURE + "Why are you trying to ban yourself?");
-            return;
+            return true;
         }
 
         if(DeltaBansUtils.isIp(banee))
         {
             sender.sendMessage(Prefixes.FAILURE + "Only names can be banned with /nameban");
-            return;
+            return true;
         }
 
         String message = defaultBanMessage;
@@ -101,6 +127,7 @@ public class NameBanCommand extends DeltaBansCommand
 
         String channelMessage = buildChannelMessage(banner, message, banee, isSilent);
         deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.NAME_BAN, channelMessage);
+        return true;
     }
 
     private String buildChannelMessage(String banner, String banMessage, String name, boolean isSilent)

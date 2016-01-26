@@ -20,37 +20,64 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class RangeWhitelistCommand extends DeltaBansCommand
+public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdownable
 {
     private DeltaRedisApi deltaRedisApi;
+    private DeltaBans plugin;
 
     public RangeWhitelistCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        super("rangewhitelist", "DeltaBans.RangeBan", plugin);
         this.deltaRedisApi = deltaRedisApi;
+        this.plugin = plugin;
+    }
+
+    @Override
+    public void register()
+    {
+        plugin.getCommand("rangewhitelist").setExecutor(this);
+        plugin.getCommand("rangewhitelist").setTabCompleter(this);
+    }
+
+    @Override
+    public void unregister()
+    {
+        plugin.getCommand("rangewhitelist").setExecutor(null);
+        plugin.getCommand("rangewhitelist").setTabCompleter(null);
     }
 
     @Override
     public void shutdown()
     {
-        this.deltaRedisApi = null;
-        super.shutdown();
+        unregister();
+        deltaRedisApi = null;
+        plugin = null;
     }
 
     @Override
-    public void runCommand(CommandSender sender, Command command, String label, String[] args)
+    public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args)
+    {
+        String lastArg = args[args.length - 1];
+        return deltaRedisApi.matchStartOfPlayerName(lastArg);
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
         if(isSilent)
@@ -61,7 +88,14 @@ public class RangeWhitelistCommand extends DeltaBansCommand
         if(args.length < 2)
         {
             sender.sendMessage(Prefixes.INFO + "/rangewhitelist <add|remove> <name>");
-            return;
+            return true;
+        }
+
+        if(!sender.hasPermission("DeltaBans.RangeBan"))
+        {
+            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
+                Prefixes.input("DeltaBans.RangeBan") + " permission.");
+            return true;
         }
 
         String nameToUpdate = args[1];
@@ -79,8 +113,9 @@ public class RangeWhitelistCommand extends DeltaBansCommand
         else
         {
             sender.sendMessage(Prefixes.INFO + "/rangewhitelist <add|remove> <name>");
-            return;
         }
+
+        return true;
     }
 
     private String buildChannelMessage(String senderName, String nameToUpdate, boolean isAdd)

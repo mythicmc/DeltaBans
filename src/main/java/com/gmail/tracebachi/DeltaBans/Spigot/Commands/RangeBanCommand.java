@@ -20,12 +20,15 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 import java.nio.charset.StandardCharsets;
@@ -35,30 +38,44 @@ import java.util.regex.Pattern;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class RangeBanCommand extends DeltaBansCommand
+public class RangeBanCommand implements CommandExecutor, Registerable, Shutdownable
 {
     private static final Pattern DASH_PATTERN = Pattern.compile("-");
 
     private String defaultRangeBanMessage;
     private DeltaRedisApi deltaRedisApi;
+    private DeltaBans plugin;
 
     public RangeBanCommand(String defaultRangeBanMessage, DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        super("rangeban", "DeltaBans.RangeBan", plugin);
         this.defaultRangeBanMessage = defaultRangeBanMessage;
         this.deltaRedisApi = deltaRedisApi;
+        this.plugin = plugin;
+    }
+
+    @Override
+    public void register()
+    {
+        plugin.getCommand("rangeban").setExecutor(this);
+    }
+
+    @Override
+    public void unregister()
+    {
+        plugin.getCommand("rangeban").setExecutor(null);
     }
 
     @Override
     public void shutdown()
     {
-        this.deltaRedisApi = null;
-        this.defaultRangeBanMessage = null;
-        super.shutdown();
+        unregister();
+        defaultRangeBanMessage = null;
+        deltaRedisApi = null;
+        plugin = null;
     }
 
     @Override
-    public void runCommand(CommandSender sender, Command command, String label, String[] args)
+    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
         if(isSilent)
@@ -69,7 +86,14 @@ public class RangeBanCommand extends DeltaBansCommand
         if(args.length < 1)
         {
             sender.sendMessage(Prefixes.INFO + "/rangeban <ip>-<ip> [message]");
-            return;
+            return true;
+        }
+
+        if(!sender.hasPermission("DeltaBans.RangeBan"))
+        {
+            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
+                Prefixes.input("DeltaBans.RangeBan") + " permission.");
+            return true;
         }
 
         String banner = sender.getName();
@@ -79,19 +103,19 @@ public class RangeBanCommand extends DeltaBansCommand
         if(splitIpRange.length != 2)
         {
             sender.sendMessage(Prefixes.FAILURE + Prefixes.input(args[0]) + " is not a valid IP range.");
-            return;
+            return true;
         }
 
         if(!DeltaBansUtils.isIp(splitIpRange[0]))
         {
             sender.sendMessage(Prefixes.FAILURE + Prefixes.input(splitIpRange[0]) + " is not a valid IP.");
-            return;
+            return true;
         }
 
         if(!DeltaBansUtils.isIp(splitIpRange[1]))
         {
             sender.sendMessage(Prefixes.FAILURE + Prefixes.input(splitIpRange[1]) + " is not a valid IP.");
-            return;
+            return true;
         }
 
         if(args.length > 1)
@@ -119,6 +143,8 @@ public class RangeBanCommand extends DeltaBansCommand
                 splitIpRange[0], splitIpRange[1], isSilent);
             deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_BAN, channelMessage);
         }
+
+        return true;
     }
 
     private String buildChannelMessage(String name, String message, String start, String end, boolean isSilent)
