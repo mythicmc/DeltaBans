@@ -40,13 +40,11 @@ import java.util.List;
  */
 public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
 {
-    private String defaultBanMessage;
     private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public NameBanCommand(String defaultBanMessage, DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public NameBanCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        this.defaultBanMessage = defaultBanMessage;
         this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
@@ -69,7 +67,6 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        defaultBanMessage = null;
         deltaRedisApi = null;
         plugin = null;
     }
@@ -118,7 +115,8 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
             return true;
         }
 
-        String message = defaultBanMessage;
+        String message = plugin.getSettings().format("DefaultBanMessage");
+
         if(args.length > 1)
         {
             message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));

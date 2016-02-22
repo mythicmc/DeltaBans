@@ -42,13 +42,11 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
 {
     private static final Pattern DASH_PATTERN = Pattern.compile("-");
 
-    private String defaultRangeBanMessage;
     private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public RangeBanCommand(String defaultRangeBanMessage, DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public RangeBanCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        this.defaultRangeBanMessage = defaultRangeBanMessage;
         this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
@@ -69,7 +67,6 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
     public void shutdown()
     {
         unregister();
-        defaultRangeBanMessage = null;
         deltaRedisApi = null;
         plugin = null;
     }
@@ -97,7 +94,7 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
         }
 
         String banner = sender.getName();
-        String message = defaultRangeBanMessage;
+        String message = plugin.getSettings().format("DefaultRangeBanMessage");
         String[] splitIpRange = DASH_PATTERN.split(args[0]);
 
         if(splitIpRange.length != 2)

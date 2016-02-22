@@ -30,11 +30,11 @@ import java.sql.*;
 public class DeltaBans extends JavaPlugin
 {
     private boolean debug;
-    private String databaseName;
-    private String ipCheckQuery;
+    private Settings settings;
 
     private BanCommand banCommand;
     private BannedCommand bannedCommand;
+    private KickCommand kickCommand;
     private NameBanCommand nameBanCommand;
     private RangeBanCommand rangeBanCommand;
     private RangeUnbanCommand rangeUnbanCommand;
@@ -57,14 +57,8 @@ public class DeltaBans extends JavaPlugin
     {
         reloadConfig();
         debug = getConfig().getBoolean("DebugMode", false);
-        databaseName = getConfig().getString("Database");
-
-        String accountTable = getConfig().getString("xAuth-AccountsTable");
-        String defaultBanMessage = getConfig().getString("DefaultBanMessage");
-        String defaultTempBanMessage = getConfig().getString("DefaultTempBanMessage");
-        String defaultWarningMessage = getConfig().getString("DefaultWarningMessage");
-        String defaultRangeBanMessage = getConfig().getString("DefaultRangeBanMessage");
-        ipCheckQuery = "SELECT lastloginip FROM `" + accountTable + "` WHERE playername = ?;";
+        settings = new Settings();
+        settings.read(this);
 
         DeltaRedis plugin = (DeltaRedis) getServer().getPluginManager().getPlugin("DeltaRedis");
         DeltaRedisApi deltaRedisApi = plugin.getDeltaRedisApi();
@@ -84,16 +78,19 @@ public class DeltaBans extends JavaPlugin
         deltaBansListener = new DeltaBansListener(this);
         getServer().getPluginManager().registerEvents(deltaBansListener, this);
 
-        banCommand = new BanCommand(defaultBanMessage, deltaRedisApi, this);
+        banCommand = new BanCommand(deltaRedisApi, this);
         banCommand.register();
 
         bannedCommand = new BannedCommand(deltaRedisApi, this);
         bannedCommand.register();
 
-        nameBanCommand = new NameBanCommand(defaultBanMessage, deltaRedisApi, this);
+        kickCommand = new KickCommand(deltaRedisApi, this);
+        kickCommand.register();
+
+        nameBanCommand = new NameBanCommand(deltaRedisApi, this);
         nameBanCommand.register();
 
-        rangeBanCommand = new RangeBanCommand(defaultRangeBanMessage, deltaRedisApi, this);
+        rangeBanCommand = new RangeBanCommand(deltaRedisApi, this);
         rangeBanCommand.register();
 
         rangeUnbanCommand = new RangeUnbanCommand(deltaRedisApi, this);
@@ -105,7 +102,7 @@ public class DeltaBans extends JavaPlugin
         saveCommand = new SaveCommand(deltaRedisApi, this);
         saveCommand.register();
 
-        tempBanCommand = new TempBanCommand(defaultTempBanMessage, deltaRedisApi, this);
+        tempBanCommand = new TempBanCommand(deltaRedisApi, this);
         tempBanCommand.register();
 
         unbanCommand = new UnbanCommand(deltaRedisApi, this);
@@ -114,7 +111,7 @@ public class DeltaBans extends JavaPlugin
         unwarnCommand = new UnwarnCommand(deltaRedisApi, this);
         unwarnCommand.register();
 
-        warnCommand = new WarnCommand(defaultWarningMessage, deltaRedisApi, this);
+        warnCommand = new WarnCommand(deltaRedisApi, this);
         warnCommand.register();
     }
 
@@ -150,6 +147,9 @@ public class DeltaBans extends JavaPlugin
         nameBanCommand.shutdown();
         nameBanCommand = null;
 
+        kickCommand.shutdown();
+        kickCommand = null;
+
         bannedCommand.shutdown();
         bannedCommand = null;
 
@@ -157,11 +157,16 @@ public class DeltaBans extends JavaPlugin
         banCommand = null;
     }
 
+    public Settings getSettings()
+    {
+        return settings;
+    }
+
     public String getIpOfPlayer(String playerName) throws IllegalArgumentException
     {
-        try(Connection connection = DbShare.getDataSource(databaseName).getConnection())
+        try(Connection connection = DbShare.getDataSource(settings.getDatabase()).getConnection())
         {
-            try(PreparedStatement statement = connection.prepareStatement(ipCheckQuery))
+            try(PreparedStatement statement = connection.prepareStatement(settings.getIpCheckQuery()))
             {
                 statement.setString(1, playerName);
                 try(ResultSet resultSet = statement.executeQuery())
@@ -205,7 +210,7 @@ public class DeltaBans extends JavaPlugin
 
     private void testConnection() throws SQLException
     {
-        try(Connection connection = DbShare.getDataSource(databaseName).getConnection())
+        try(Connection connection = DbShare.getDataSource(settings.getDatabase()).getConnection())
         {
             try(Statement statement = connection.createStatement())
             {

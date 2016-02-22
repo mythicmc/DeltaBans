@@ -22,15 +22,11 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -42,35 +38,14 @@ public class DeltaBansListener implements Listener
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message\\}");
 
     private DeltaBans plugin;
-    private HashMap<Integer, List<String>> warnCommandMap = new HashMap<>();
 
     public DeltaBansListener(DeltaBans plugin)
     {
         this.plugin = plugin;
-        ConfigurationSection warningSection = plugin.getConfig().getConfigurationSection("WarningCommands");
-
-        if(warningSection != null)
-        {
-            for(String key : warningSection.getKeys(false))
-            {
-                Integer warningAmount = parseInt(key);
-                if(warningAmount != null && warningAmount > 0)
-                {
-                    warnCommandMap.put(warningAmount, warningSection.getStringList(key));
-                    plugin.info("Added warning commands for " + key + " warnings.");
-                }
-                else
-                {
-                    plugin.info(key + " is not a valid warning amount.");
-                }
-            }
-        }
     }
 
     public void shutdown()
     {
-        warnCommandMap.clear();
-        warnCommandMap = null;
         plugin = null;
     }
 
@@ -118,7 +93,7 @@ public class DeltaBansListener implements Listener
 
     private void dispatchWarn(CommandSender sender, String receiver, String message, Integer warnAmount)
     {
-        for(String command : warnCommandMap.getOrDefault(warnAmount, Collections.emptyList()))
+        for(String command : plugin.getSettings().getWarningCommands(warnAmount))
         {
             String namedReplaced = NAME_PATTERN.matcher(command).replaceAll(receiver);
             String messageReplaced = MESSAGE_PATTERN.matcher(namedReplaced).replaceAll(message);
@@ -129,18 +104,6 @@ public class DeltaBansListener implements Listener
                 Bukkit.dispatchCommand(sender, messageReplaced);
             }
             catch(Exception ignored) {}
-        }
-    }
-
-    private Integer parseInt(String src)
-    {
-        try
-        {
-            return Integer.parseInt(src);
-        }
-        catch(NumberFormatException ex)
-        {
-            return null;
         }
     }
 }

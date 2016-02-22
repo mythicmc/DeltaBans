@@ -6,17 +6,17 @@ Database: Main
 # Database table used by xAuth to save account information
 xAuth-AccountsTable: accounts
 
-# Default message to show on ban
-DefaultBanMessage: 'You have been banned from this server!'
+# Formatting
+Formats:
 
-# Default message to show on temp ban
-DefaultTempBanMessage: 'You have been temporarily banned from this server!'
+  DefaultBanMessage: 'You have been banned from this server!'
+  DefaultTempBanMessage: 'You have been temporarily banned from this server!'
+  DefaultRangeBanMessage: 'You have been IP range banned from this server!'
+  DefaultWarningMessage: 'You have been warned!'
+  DefaultKickMessage: 'You have been kicked!'
 
-# Default message to show on range ban
-DefaultRangeBanMessage: 'You have been IP range banned from this server!'
-
-# Default message to show on warning
-DefaultWarningMessage: 'You have been warned!'
+  KickMessageToPlayer: 'You have been kicked by {0} for {1}.'
+  KickMessageToAnnounce: '{0} was kicked by {1} for {2}.'
 
 # Commands to run on a specific number of warnings
 # {name} Name of the player that was warned

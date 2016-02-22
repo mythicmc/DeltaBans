@@ -40,13 +40,11 @@ import java.util.List;
  */
 public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
 {
-    private String defaultTempBanMessage;
     private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public TempBanCommand(String defaultTempBanMessage, DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public TempBanCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        this.defaultTempBanMessage = defaultTempBanMessage;
         this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
@@ -69,7 +67,6 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        defaultTempBanMessage = null;
         deltaRedisApi = null;
         plugin = null;
     }
@@ -106,7 +103,7 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
         String banner = sender.getName();
         String possibleIp = args[0];
         String name = null;
-        String message = defaultTempBanMessage;
+        String message = plugin.getSettings().format("DefaultTempBanMessage");
         Long duration = getDuration(args[1]);
 
         if(banner.equalsIgnoreCase(possibleIp))

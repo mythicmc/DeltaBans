@@ -16,4 +16,5 @@ public interface DeltaBansChannels
     String BANNED = "DB-Banned";
     String SAVE = "DB-Save";
     String ANNOUNCE = "DB-Announce";
+    String KICK = "DB-Kick";
 }

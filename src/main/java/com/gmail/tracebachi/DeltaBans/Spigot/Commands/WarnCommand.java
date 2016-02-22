@@ -40,13 +40,11 @@ import java.util.List;
  */
 public class WarnCommand implements TabExecutor, Registerable, Shutdownable
 {
-    private String defaultWarningMessage;
     private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public WarnCommand(String defaultWarningMessage, DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public WarnCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        this.defaultWarningMessage = defaultWarningMessage;
         this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
@@ -69,7 +67,6 @@ public class WarnCommand implements TabExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        defaultWarningMessage = null;
         deltaRedisApi = null;
         plugin = null;
     }
@@ -105,7 +102,7 @@ public class WarnCommand implements TabExecutor, Registerable, Shutdownable
 
         String warner = sender.getName();
         String name = args[0];
-        String message = defaultWarningMessage;
+        String message = plugin.getSettings().format("DefaultWarningMessage");
 
         if(name.equalsIgnoreCase(warner))
         {
