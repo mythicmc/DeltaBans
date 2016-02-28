@@ -212,7 +212,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
                     banMessage,
                     entry.hasDuration(),
                     isSilent);
-                deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+                announce(announcement, isSilent);
             }
         }
         else if(channel.equals(DeltaBansChannels.UNBAN))
@@ -234,7 +234,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
                 else
                 {
                     String announcement = formatUnbanAnnouncement(sender, banee, true, isSilent);
-                    deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+                    announce(announcement, isSilent);
                 }
             }
             else
@@ -249,7 +249,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
                 else
                 {
                     String announcement = formatUnbanAnnouncement(sender, banee, false, isSilent);
-                    deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+                    announce(announcement, isSilent);
                 }
             }
         }
@@ -272,7 +272,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
                 kickOffProxy(name, null, getKickMessage(entry));
 
                 String announcement = formatBanAnnouncement(banner, name, false, banMessage, false, isSilent);
-                deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+                announce(announcement, isSilent);
             }
         }
         else if(channel.equals(DeltaBansChannels.RANGE_BAN))
@@ -298,8 +298,8 @@ public class BanListener implements Listener, Registerable, Shutdownable
                 }
             }
 
-            String announcement = formatRangeBanAnnouncement(banner, start + "-" + end, message, isSilent);
-            deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+            String announcement = formatRangeBanAnnouncement(banner, start + "-" + end, message);
+            announce(announcement, isSilent);
         }
         else if(channel.equals(DeltaBansChannels.RANGE_UNBAN))
         {
@@ -308,8 +308,8 @@ public class BanListener implements Listener, Registerable, Shutdownable
             boolean isSilent = in.readBoolean();
             int count = rangeBanStorage.removeIpRangeBan(ip);
 
-            String announcement = formatRangeUnbanAnnouncement(banner, ip, count, isSilent);
-            deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE, announcement);
+            String announcement = formatRangeUnbanAnnouncement(banner, ip, count);
+            announce(announcement, isSilent);
         }
         else if(channel.equals(DeltaBansChannels.RANGE_WHITELIST))
         {
@@ -360,18 +360,16 @@ public class BanListener implements Listener, Registerable, Shutdownable
     private String formatBanAnnouncement(String banner, String banee, boolean isIp, String message,
         boolean isTemporary, boolean isSilent)
     {
-        return ((isSilent) ? "!" : "") +
-            ChatColor.GOLD + banner +
+        return ChatColor.GOLD + banner +
             ChatColor.WHITE + ((isTemporary) ? " temp-banned " : " banned ") +
             ChatColor.GOLD + ((isIp && !isSilent) ? HIDDEN_IP : banee) +
             ChatColor.WHITE + " for " +
             ChatColor.GOLD + message;
     }
 
-    private String formatRangeBanAnnouncement(String banner, String range, String message, boolean isSilent)
+    private String formatRangeBanAnnouncement(String banner, String range, String message)
     {
-        return ((isSilent) ? "!" : "") +
-            ChatColor.GOLD + banner +
+        return ChatColor.GOLD + banner +
             ChatColor.WHITE + " range-banned " +
             ChatColor.GOLD + range +
             ChatColor.WHITE + " for " +
@@ -380,20 +378,24 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
     private String formatUnbanAnnouncement(String sender, String banee, boolean isIp, boolean isSilent)
     {
-        return ((isSilent) ? "!" : "") +
-            ChatColor.GOLD + sender +
+        return ChatColor.GOLD + sender +
             ChatColor.WHITE + " unbanned " +
             ChatColor.GOLD + ((isIp && !isSilent) ? HIDDEN_IP : banee);
     }
 
-    private String formatRangeUnbanAnnouncement(String sender, String ip, int count, boolean isSilent)
+    private String formatRangeUnbanAnnouncement(String sender, String ip, int count)
     {
-        return ((isSilent) ? "!" : "") +
-            ChatColor.GOLD + sender +
+        return ChatColor.GOLD + sender +
             ChatColor.WHITE + " unbanned " +
             ChatColor.GOLD + count +
             ChatColor.WHITE + " IP ranges overlapping with " +
             ChatColor.GOLD + ip;
+    }
+
+    private void announce(String announcement, boolean isSilent)
+    {
+        deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT, announcement,
+            isSilent ? "DeltaBans.SeeSilent" : "");
     }
 
     private String getKickMessage(BanEntry entry)

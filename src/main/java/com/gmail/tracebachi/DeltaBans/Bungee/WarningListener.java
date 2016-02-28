@@ -94,8 +94,9 @@ public class WarningListener implements Listener, Registerable, Shutdownable
             deltaRedisApi.publish(event.getSendingServer(), DeltaBansChannels.WARN,
                 new String(out.toByteArray(), StandardCharsets.UTF_8));
 
-            deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE,
-                formatWarnAnnouncement(warner, name, message, isSilent));
+            String announcement = formatWarnAnnouncement(warner, name, message);
+            deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT, announcement,
+                isSilent ? "DeltaBans.SeeSilent" : "");
         }
         else if(channel.equalsIgnoreCase(DeltaBansChannels.UNWARN))
         {
@@ -110,10 +111,9 @@ public class WarningListener implements Listener, Registerable, Shutdownable
         }
     }
 
-    private String formatWarnAnnouncement(String warner, String name, String message, boolean isSilent)
+    private String formatWarnAnnouncement(String warner, String name, String message)
     {
-        return ((isSilent) ? "!" : "") +
-            ChatColor.GOLD + warner +
+        return ChatColor.GOLD + warner +
             ChatColor.WHITE + " warned " +
             ChatColor.GOLD + name +
             ChatColor.WHITE + " for " +

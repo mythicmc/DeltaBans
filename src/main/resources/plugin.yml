@@ -1,6 +1,6 @@
 name: DeltaBans
 main: com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans
-version: 1.4
+version: 1.5
 author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
 depend: [DeltaRedis, xAuth]
 commands:

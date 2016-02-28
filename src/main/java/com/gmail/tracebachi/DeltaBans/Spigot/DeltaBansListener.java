@@ -52,22 +52,7 @@ public class DeltaBansListener implements Listener
     @EventHandler
     public void onRedisMessage(DeltaRedisMessageEvent event)
     {
-        if(event.getChannel().equals(DeltaBansChannels.ANNOUNCE))
-        {
-            String message = event.getMessage();
-            boolean isSilent = message.startsWith("!");
-
-            if(isSilent)
-            {
-                message = message.substring(1);
-                Bukkit.broadcast(message, "DeltaBans.SeeSilent");
-            }
-            else
-            {
-                Bukkit.broadcastMessage(message);
-            }
-        }
-        else if(event.getChannel().equals(DeltaBansChannels.WARN))
+        if(event.getChannel().equals(DeltaBansChannels.WARN))
         {
             byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
             ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);

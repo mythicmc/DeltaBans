@@ -6,7 +6,7 @@
 
     <groupId>com.gmail.tracebachi</groupId>
     <artifactId>DeltaBans</artifactId>
-    <version>1.4</version>
+    <version>1.5</version>
 
     <repositories>
         <repository>
@@ -35,7 +35,7 @@
         <dependency>
             <groupId>com.gmail.tracebachi</groupId>
             <artifactId>DeltaRedis</artifactId>
-            <version>1.6</version>
+            <version>1.7</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

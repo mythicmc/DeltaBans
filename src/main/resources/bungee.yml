@@ -1,5 +1,5 @@
 name: DeltaBans
 main: com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans
-version: 1.4
+version: 1.5
 author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
 depends: [DeltaRedis]

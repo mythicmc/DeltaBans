@@ -181,17 +181,8 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
     {
         String kickAnnounce = settings.format("KickMessageToAnnounce", kicker, nameToKick, message);
 
-        if(isSilent)
-        {
-            Bukkit.broadcast(kickAnnounce, "DeltaBans.SeeSilent");
-        }
-        else
-        {
-            Bukkit.broadcastMessage(kickAnnounce);
-        }
-
-        deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.ANNOUNCE,
-            (isSilent ? "!" : "") + kickAnnounce);
+        deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT, kickAnnounce,
+            isSilent ? "DeltaBans.SeeSilent" : "");
     }
 
     private void sendMessage(String senderName, String message)
