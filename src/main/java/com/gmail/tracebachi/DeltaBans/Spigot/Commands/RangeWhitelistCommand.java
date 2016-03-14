@@ -19,7 +19,7 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
@@ -50,15 +50,15 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
     @Override
     public void register()
     {
-        plugin.getCommand("rangewhitelist").setExecutor(this);
-        plugin.getCommand("rangewhitelist").setTabCompleter(this);
+        plugin.getCommand("rangebanwhitelist").setExecutor(this);
+        plugin.getCommand("rangebanwhitelist").setTabCompleter(this);
     }
 
     @Override
     public void unregister()
     {
-        plugin.getCommand("rangewhitelist").setExecutor(null);
-        plugin.getCommand("rangewhitelist").setTabCompleter(null);
+        plugin.getCommand("rangebanwhitelist").setExecutor(null);
+        plugin.getCommand("rangebanwhitelist").setTabCompleter(null);
     }
 
     @Override
@@ -80,6 +80,7 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
+
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -87,38 +88,35 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
 
         if(args.length < 2)
         {
-            sender.sendMessage(Prefixes.INFO + "/rangewhitelist <add|remove> <name>");
+            sender.sendMessage(Settings.format("RangeBanWhitelistUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.RangeBan"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.RangeBan") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.RangeBan"));
             return true;
         }
 
-        String nameToUpdate = args[1];
-
         if(args[0].equalsIgnoreCase("add"))
         {
-            String channelMessage = buildChannelMessage(sender.getName(), nameToUpdate, true);
+            String channelMessage = buildMessage(sender.getName(), args[1], true);
             deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_WHITELIST, channelMessage);
         }
         else if(args[0].equalsIgnoreCase("remove"))
         {
-            String channelMessage = buildChannelMessage(sender.getName(), nameToUpdate, false);
+            String channelMessage = buildMessage(sender.getName(), args[1], false);
             deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_WHITELIST, channelMessage);
         }
         else
         {
-            sender.sendMessage(Prefixes.INFO + "/rangewhitelist <add|remove> <name>");
+            sender.sendMessage(Settings.format("RangeBanWhitelistUsage"));
         }
 
         return true;
     }
 
-    private String buildChannelMessage(String senderName, String nameToUpdate, boolean isAdd)
+    private String buildMessage(String senderName, String nameToUpdate, boolean isAdd)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(senderName);

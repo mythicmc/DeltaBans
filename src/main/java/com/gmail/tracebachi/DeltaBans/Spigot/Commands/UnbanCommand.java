@@ -19,6 +19,7 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
+import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -77,14 +78,13 @@ public class UnbanCommand implements CommandExecutor, Registerable, Shutdownable
 
         if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/unban <name|ip>");
+            sender.sendMessage(Settings.format("UnbanUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Ban"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.Ban") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Ban"));
             return true;
         }
 
@@ -94,17 +94,17 @@ public class UnbanCommand implements CommandExecutor, Registerable, Shutdownable
 
         if(banee.equals(banner))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You are already unbanned.");
+            sender.sendMessage(Settings.format("UnbanSelf"));
             return true;
         }
 
-        String channelMessage = buildChannelMessage(banner, banee, isIp, isSilent);
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.UNBAN, channelMessage);
+        String channelMessage = buildMessage(banner, banee, isIp, isSilent);
 
+        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.UNBAN, channelMessage);
         return true;
     }
 
-    private String buildChannelMessage(String sender, String banee, boolean isIp, boolean isSilent)
+    private String buildMessage(String sender, String banee, boolean isIp, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(sender);

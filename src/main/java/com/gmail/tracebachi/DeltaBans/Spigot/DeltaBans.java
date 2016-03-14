@@ -16,7 +16,6 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot;
 
-import com.gmail.tracebachi.DbShare.DbShare;
 import com.gmail.tracebachi.DeltaBans.Spigot.Commands.*;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedis;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
@@ -29,9 +28,6 @@ import java.sql.*;
  */
 public class DeltaBans extends JavaPlugin
 {
-    private boolean debug;
-    private Settings settings;
-
     private BanCommand banCommand;
     private BannedCommand bannedCommand;
     private KickCommand kickCommand;
@@ -44,7 +40,6 @@ public class DeltaBans extends JavaPlugin
     private UnbanCommand unbanCommand;
     private UnwarnCommand unwarnCommand;
     private WarnCommand warnCommand;
-    private DeltaBansListener deltaBansListener;
 
     @Override
     public void onLoad()
@@ -56,9 +51,7 @@ public class DeltaBans extends JavaPlugin
     public void onEnable()
     {
         reloadConfig();
-        debug = getConfig().getBoolean("DebugMode", false);
-        settings = new Settings();
-        settings.read(this);
+        Settings.read(getConfig());
 
         DeltaRedis plugin = (DeltaRedis) getServer().getPluginManager().getPlugin("DeltaRedis");
         DeltaRedisApi deltaRedisApi = plugin.getDeltaRedisApi();
@@ -74,9 +67,6 @@ public class DeltaBans extends JavaPlugin
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-
-        deltaBansListener = new DeltaBansListener(this);
-        getServer().getPluginManager().registerEvents(deltaBansListener, this);
 
         banCommand = new BanCommand(deltaRedisApi, this);
         banCommand.register();
@@ -118,8 +108,6 @@ public class DeltaBans extends JavaPlugin
     @Override
     public void onDisable()
     {
-        deltaBansListener = null;
-
         warnCommand.shutdown();
         warnCommand = null;
 
@@ -157,29 +145,17 @@ public class DeltaBans extends JavaPlugin
         banCommand = null;
     }
 
-    public Settings getSettings()
+    public String getIpOfPlayer(String playerName)
     {
-        return settings;
-    }
-
-    public String getIpOfPlayer(String playerName) throws IllegalArgumentException
-    {
-        try(Connection connection = DbShare.getDataSource(settings.getDatabase()).getConnection())
+        try(Connection connection = Settings.getDataSource().getConnection())
         {
-            try(PreparedStatement statement = connection.prepareStatement(settings.getIpCheckQuery()))
+            try(PreparedStatement statement = connection.prepareStatement(Settings.getIpCheckQuery()))
             {
                 statement.setString(1, playerName);
+
                 try(ResultSet resultSet = statement.executeQuery())
                 {
-                    if(resultSet.next())
-                    {
-                        return resultSet.getString("lastloginip");
-                    }
-                    else
-                    {
-                        throw new IllegalArgumentException("There is no player by the name (" +
-                            playerName + ") in the xAuth account table.");
-                    }
+                    return (resultSet.next()) ? resultSet.getString("lastloginip") : null;
                 }
             }
         }
@@ -202,7 +178,7 @@ public class DeltaBans extends JavaPlugin
 
     public void debug(String message)
     {
-        if(debug)
+        if(Settings.isDebugEnabled())
         {
             getLogger().info("[Debug] " + message);
         }
@@ -210,7 +186,7 @@ public class DeltaBans extends JavaPlugin
 
     private void testConnection() throws SQLException
     {
-        try(Connection connection = DbShare.getDataSource(settings.getDatabase()).getConnection())
+        try(Connection connection = Settings.getDataSource().getConnection())
         {
             try(Statement statement = connection.createStatement())
             {

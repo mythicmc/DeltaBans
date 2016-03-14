@@ -19,7 +19,7 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
@@ -82,6 +82,7 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
+
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -89,26 +90,37 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
 
         if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/ban <name|ip> [message]");
+            sender.sendMessage(Settings.format("BanUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Ban"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.Ban") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Ban"));
             return true;
         }
 
         String banner = sender.getName();
         String possibleIp = args[0];
         String name = null;
-        String message = plugin.getSettings().format("DefaultBanMessage");
+        String message = Settings.format("DefaultBanMessage");
 
         if(banner.equalsIgnoreCase(possibleIp))
         {
-            sender.sendMessage(Prefixes.FAILURE + "Why are you trying to ban yourself?");
+            sender.sendMessage(Settings.format("BanSelf"));
             return true;
+        }
+
+        if(!DeltaBansUtils.isIp(possibleIp))
+        {
+            name = possibleIp;
+            possibleIp = plugin.getIpOfPlayer(name);
+
+            if(possibleIp == null)
+            {
+                sender.sendMessage(Settings.format("NoIpFound", name));
+                return true;
+            }
         }
 
         if(args.length > 1)
@@ -117,33 +129,13 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        if(!DeltaBansUtils.isIp(possibleIp))
-        {
-            try
-            {
-                name = possibleIp;
-                possibleIp = plugin.getIpOfPlayer(name);
+        String channelMessage = buildMessage(banner, message, possibleIp, name, isSilent);
 
-                if(possibleIp == null)
-                {
-                    sender.sendMessage(Prefixes.FAILURE + "There is no IP information for " +
-                        Prefixes.input(name) + ". However, they can still be banned with /nameban");
-                    return true;
-                }
-            }
-            catch(IllegalArgumentException ex)
-            {
-                sender.sendMessage(Prefixes.FAILURE + ex.getMessage());
-                return true;
-            }
-        }
-
-        String channelMessage = buildChannelMessage(banner, message, possibleIp, name, isSilent);
         deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.BAN, channelMessage);
         return true;
     }
 
-    private String buildChannelMessage(String banner, String banMessage, String ip, String name, boolean isSilent)
+    private String buildMessage(String banner, String banMessage, String ip, String name, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(banner);

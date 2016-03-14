@@ -19,7 +19,7 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
@@ -81,36 +81,33 @@ public class BannedCommand implements TabExecutor, Registerable, Shutdownable
     {
         if(args.length == 0)
         {
-            sender.sendMessage(Prefixes.INFO + "/banned <name|ip>");
+            sender.sendMessage(Settings.format("BannedUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.CheckBan"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.CheckBan") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.CheckBan"));
             return true;
         }
 
         boolean hasExtraPerm = sender.hasPermission("DeltaBans.CheckBan.Extra");
-        String senderName = sender.getName();
-        String argument = args[0];
-        boolean isIp = DeltaBansUtils.isIp(argument);
+        boolean isIp = DeltaBansUtils.isIp(args[0]);
 
         if(isIp && !hasExtraPerm)
         {
-            sender.sendMessage(Prefixes.FAILURE + "You are not allowed to check IP bans.");
-        }
-        else
-        {
-            String channelMessage = buildChannelMessage(senderName, argument, isIp, hasExtraPerm);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.BANNED, channelMessage);
+            sender.sendMessage(Settings.format("CheckIpNotAllowed"));
+            return true;
         }
 
+        String senderName = sender.getName();
+        String channelMessage = buildMessage(senderName, args[0], isIp, hasExtraPerm);
+
+        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.BANNED, channelMessage);
         return true;
     }
 
-    private String buildChannelMessage(String banner, String argument, boolean isIp, boolean hasExtra)
+    private String buildMessage(String banner, String argument, boolean isIp, boolean hasExtra)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(banner);

@@ -20,7 +20,6 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
@@ -34,6 +33,8 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +44,7 @@ import static com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisMessageEvent.DELT
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class KickCommand implements TabExecutor, Registerable, Shutdownable
+public class KickCommand implements TabExecutor, Listener, Registerable, Shutdownable
 {
     private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
@@ -57,6 +58,7 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
     @Override
     public void register()
     {
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
         plugin.getCommand("kick").setExecutor(this);
         plugin.getCommand("kick").setTabCompleter(this);
     }
@@ -66,6 +68,7 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
     {
         plugin.getCommand("kick").setExecutor(null);
         plugin.getCommand("kick").setTabCompleter(null);
+        HandlerList.unregisterAll(this);
     }
 
     @Override
@@ -87,6 +90,7 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
+
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -94,25 +98,23 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
 
         if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/kick <name> [message]");
+            sender.sendMessage(Settings.format("KickUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Kick"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.Kick") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Kick"));
             return true;
         }
 
         String kicker = sender.getName();
         String nameToKick = args[0];
-        Settings settings = plugin.getSettings();
-        String message = settings.format("DefaultKickMessage");
+        String message = Settings.format("DefaultKickMessage");
 
         if(kicker.equalsIgnoreCase(nameToKick))
         {
-            sender.sendMessage(Prefixes.FAILURE + "Why are you trying to kick yourself?");
+            sender.sendMessage(Settings.format("KickSelf"));
             return true;
         }
 
@@ -126,11 +128,10 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
 
         if(toKick != null)
         {
-            String kickPlayer = settings.format("KickMessageToPlayer", kicker, nameToKick, message);
+            String kickPlayer = Settings.format("KickMessageToPlayer", kicker, nameToKick, message);
 
             toKick.kickPlayer(kickPlayer);
-            announceKick(settings, kicker, nameToKick, message, isSilent);
-
+            announceKick(kicker, nameToKick, message, isSilent);
             return true;
         }
 
@@ -138,16 +139,14 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
 
         deltaRedisApi.findPlayer(nameToKick, cachedPlayer ->
         {
-            if(cachedPlayer != null)
+            if(cachedPlayer == null)
             {
-                deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.KICK,
-                    kicker, nameToKick, finalMessage, isSilent ? "1" : "0");
+                sendMessage(kicker, Settings.format("NotOnline", nameToKick));
+                return;
             }
-            else
-            {
-                sendMessage(kicker, Prefixes.FAILURE + Prefixes.input(nameToKick) +
-                    " is not online.");
-            }
+
+            deltaRedisApi.publish(Servers.SPIGOT, DeltaBansChannels.KICK,
+                kicker, nameToKick, finalMessage, isSilent ? "1" : "0");
         });
 
         return true;
@@ -158,7 +157,6 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
     {
         if(event.getChannel().equals(DeltaBansChannels.KICK))
         {
-            Settings settings = plugin.getSettings();
             String[] split = DELTA_PATTERN.split(event.getMessage(), 4);
             String kicker = split[0];
             String nameToKick = split[1];
@@ -168,18 +166,17 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
 
             if(toKick != null)
             {
-                String kickPlayer = settings.format("KickMessageToPlayer", kicker, nameToKick, message);
+                String kickPlayer = Settings.format("KickMessageToPlayer", kicker, nameToKick, message);
                 toKick.kickPlayer(kickPlayer);
             }
 
-            announceKick(settings, kicker, nameToKick, message, isSilent.equals("1"));
+            announceKick(kicker, nameToKick, message, isSilent.equals("1"));
         }
     }
 
-    private void announceKick(Settings settings, String kicker, String nameToKick,
-        String message, boolean isSilent)
+    private void announceKick(String kicker, String nameToKick, String message, boolean isSilent)
     {
-        String kickAnnounce = settings.format("KickMessageToAnnounce", kicker, nameToKick, message);
+        String kickAnnounce = Settings.format("KickMessageToAnnounce", kicker, nameToKick, message);
 
         deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT, kickAnnounce,
             isSilent ? "DeltaBans.SeeSilent" : "");

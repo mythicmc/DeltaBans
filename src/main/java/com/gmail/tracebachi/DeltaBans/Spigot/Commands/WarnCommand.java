@@ -19,27 +19,38 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
+import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisMessageEvent;
+import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class WarnCommand implements TabExecutor, Registerable, Shutdownable
+public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdownable
 {
+    private static final Pattern NAME_PATTERN = Pattern.compile("\\{name\\}");
+    private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message\\}");
+
     private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
@@ -52,6 +63,7 @@ public class WarnCommand implements TabExecutor, Registerable, Shutdownable
     @Override
     public void register()
     {
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
         plugin.getCommand("warn").setExecutor(this);
         plugin.getCommand("warn").setTabCompleter(this);
     }
@@ -61,6 +73,7 @@ public class WarnCommand implements TabExecutor, Registerable, Shutdownable
     {
         plugin.getCommand("warn").setExecutor(null);
         plugin.getCommand("warn").setTabCompleter(null);
+        HandlerList.unregisterAll(this);
     }
 
     @Override
@@ -82,6 +95,7 @@ public class WarnCommand implements TabExecutor, Registerable, Shutdownable
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
+
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -89,24 +103,23 @@ public class WarnCommand implements TabExecutor, Registerable, Shutdownable
 
         if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/warn <name> [message]");
+            sender.sendMessage(Settings.format("WarnUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Warn"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.Warn") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Warn"));
             return true;
         }
 
         String warner = sender.getName();
         String name = args[0];
-        String message = plugin.getSettings().format("DefaultWarningMessage");
+        String message = Settings.format("DefaultWarnMessage");
 
         if(name.equalsIgnoreCase(warner))
         {
-            sender.sendMessage(Prefixes.FAILURE + "Warning yourself? You have been warned! :)");
+            sender.sendMessage(Settings.format("WarnSelf"));
             return true;
         }
 
@@ -116,13 +129,41 @@ public class WarnCommand implements TabExecutor, Registerable, Shutdownable
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        String channelMessage = buildChannelMessage(warner, name, message, isSilent);
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WARN, channelMessage);
+        String channelMessage = buildMessage(warner, name, message, isSilent);
 
+        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WARN, channelMessage);
         return true;
     }
 
-    private String buildChannelMessage(String warner, String name, String message, boolean isSilent)
+    @EventHandler
+    public void onRedisMessage(DeltaRedisMessageEvent event)
+    {
+        if(event.getChannel().equals(DeltaBansChannels.WARN))
+        {
+            byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
+            ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
+            String senderName = in.readUTF();
+            String receiver = in.readUTF();
+            String message = in.readUTF();
+            Integer amount = Integer.parseInt(in.readUTF(), 16);
+
+            Player player = Bukkit.getPlayer(senderName);
+
+            if(player != null && player.isOnline())
+            {
+                boolean wasOp = player.isOp();
+                player.setOp(true);
+                dispatchWarn(player, receiver, message, amount);
+                player.setOp(wasOp);
+            }
+            else
+            {
+                dispatchWarn(Bukkit.getConsoleSender(), receiver, message, amount);
+            }
+        }
+    }
+
+    private String buildMessage(String warner, String name, String message, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(warner);
@@ -130,5 +171,22 @@ public class WarnCommand implements TabExecutor, Registerable, Shutdownable
         out.writeUTF(message);
         out.writeBoolean(isSilent);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+    private void dispatchWarn(CommandSender sender, String receiver, String message, Integer warnAmount)
+    {
+        for(String command : Settings.getWarningCommands(warnAmount))
+        {
+            String namedReplaced = NAME_PATTERN.matcher(command).replaceAll(receiver);
+            String messageReplaced = MESSAGE_PATTERN.matcher(namedReplaced).replaceAll(message);
+
+            plugin.info(sender.getName() + " issued warn command /" + messageReplaced);
+
+            try
+            {
+                Bukkit.dispatchCommand(sender, messageReplaced);
+            }
+            catch(Exception ignored) {}
+        }
     }
 }

@@ -19,7 +19,7 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
@@ -70,6 +70,7 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable, Shutdow
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
+
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -77,14 +78,13 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable, Shutdow
 
         if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/rangeunban <ip>");
+            sender.sendMessage(Settings.format("RangeUnbanUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.RangeBan"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.RangeBan") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.RangeBan"));
             return true;
         }
 
@@ -93,21 +93,21 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable, Shutdow
 
         if(!DeltaBansUtils.isIp(ip))
         {
-            sender.sendMessage(Prefixes.FAILURE + Prefixes.input(ip) + " is not a valid IP.");
+            sender.sendMessage(Settings.format("InvalidIp", args[0]));
             return true;
         }
 
-        String channelMessage = buildChannelMessage(banner, ip, isSilent);
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_UNBAN, channelMessage);
+        String channelMessage = buildMessage(banner, ip, isSilent);
 
+        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_UNBAN, channelMessage);
         return true;
     }
 
-    private String buildChannelMessage(String name, String ip, boolean isSilent)
+    private String buildMessage(String name, String ip, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(name);
-        out.writeUTF(ip);
+        out.writeUTF(ip);   // TODO Use Long like in rangeban?
         out.writeBoolean(isSilent);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }

@@ -17,7 +17,6 @@
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
@@ -36,12 +35,12 @@ import java.util.List;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class UnwarnCommand implements TabExecutor, Registerable, Shutdownable
+public class WhitelistCommand implements TabExecutor, Registerable, Shutdownable
 {
     private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public UnwarnCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public WhitelistCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
         this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
@@ -50,15 +49,15 @@ public class UnwarnCommand implements TabExecutor, Registerable, Shutdownable
     @Override
     public void register()
     {
-        plugin.getCommand("unwarn").setExecutor(this);
-        plugin.getCommand("unwarn").setTabCompleter(this);
+        plugin.getCommand("whitelist").setExecutor(this);
+        plugin.getCommand("whitelist").setTabCompleter(this);
     }
 
     @Override
     public void unregister()
     {
-        plugin.getCommand("unwarn").setExecutor(null);
-        plugin.getCommand("unwarn").setTabCompleter(null);
+        plugin.getCommand("whitelist").setExecutor(null);
+        plugin.getCommand("whitelist").setTabCompleter(null);
     }
 
     @Override
@@ -70,7 +69,7 @@ public class UnwarnCommand implements TabExecutor, Registerable, Shutdownable
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args)
     {
         String lastArg = args[args.length - 1];
         return deltaRedisApi.matchStartOfPlayerName(lastArg);
@@ -79,60 +78,60 @@ public class UnwarnCommand implements TabExecutor, Registerable, Shutdownable
     @Override
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
-        boolean isSilent = DeltaBansUtils.isSilent(args);
-
-        if(isSilent)
-        {
-            args = DeltaBansUtils.filterSilent(args);
-        }
-
         if(args.length < 1)
         {
-            sender.sendMessage(Settings.format("UnwarnUsage"));
+            sender.sendMessage(Settings.format("WhitelistUsage"));
             return true;
         }
 
-        if(!sender.hasPermission("DeltaBans.Warn"))
+        if(!sender.hasPermission("DeltaBans.Whitelist"))
         {
-            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Warn"));
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Whitelist"));
             return true;
         }
 
-        String warner = sender.getName();
-        String name = args[0];
-        Integer amount = 1;
-
-        if(args.length >= 2)
+        if(args[0].equalsIgnoreCase("on"))
         {
-            amount = parseInt(args[1]);
-            amount = (amount == null) ? 1 : amount;
+            String channelMessage = buildToggleWhitelistMessage(sender.getName(), true);
+            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_TOGGLE, channelMessage);
+        }
+        else if(args[0].equalsIgnoreCase("off"))
+        {
+            String channelMessage = buildToggleWhitelistMessage(sender.getName(), false);
+            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_TOGGLE, channelMessage);
+        }
+        else if(args.length > 1 && args[0].equalsIgnoreCase("add"))
+        {
+            String channelMessage = buildEditWhitelistMessage(sender.getName(), true, args[1]);
+            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_EDIT, channelMessage);
+        }
+        else if(args.length > 1 && args[0].equalsIgnoreCase("remove"))
+        {
+            String channelMessage = buildEditWhitelistMessage(sender.getName(), false, args[1]);
+            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_EDIT, channelMessage);
+        }
+        else
+        {
+            sender.sendMessage(Settings.format("WhitelistUsage"));
         }
 
-        String channelMessage = buildMessage(warner, name, amount, isSilent);
-
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.UNWARN, channelMessage);
         return true;
     }
 
-    private String buildMessage(String warner, String name, Integer amount, boolean isSilent)
+    private String buildToggleWhitelistMessage(String senderName, boolean enable)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(warner);
-        out.writeUTF(name);
-        out.writeUTF(Integer.toHexString(amount));
-        out.writeBoolean(isSilent);
+        out.writeUTF(senderName);
+        out.writeBoolean(enable);
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 
-    private Integer parseInt(String source)
+    private String buildEditWhitelistMessage(String senderName, boolean add, String nameToUpdate)
     {
-        try
-        {
-            return Integer.parseInt(source);
-        }
-        catch(NumberFormatException ex)
-        {
-            return null;
-        }
+        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+        out.writeUTF(senderName);
+        out.writeBoolean(add);
+        out.writeUTF(nameToUpdate);
+        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

@@ -19,7 +19,7 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
+import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
@@ -75,6 +75,7 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
+
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -82,36 +83,35 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
 
         if(args.length < 1)
         {
-            sender.sendMessage(Prefixes.INFO + "/rangeban <ip>-<ip> [message]");
+            sender.sendMessage(Settings.format("RangeBanUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.RangeBan"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.RangeBan") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.RangeBan"));
             return true;
         }
 
         String banner = sender.getName();
-        String message = plugin.getSettings().format("DefaultRangeBanMessage");
         String[] splitIpRange = DASH_PATTERN.split(args[0]);
+        String message = Settings.format("DefaultRangeBanMessage");
 
         if(splitIpRange.length != 2)
         {
-            sender.sendMessage(Prefixes.FAILURE + Prefixes.input(args[0]) + " is not a valid IP range.");
+            sender.sendMessage(Settings.format("InvalidRange", args[0]));
             return true;
         }
 
         if(!DeltaBansUtils.isIp(splitIpRange[0]))
         {
-            sender.sendMessage(Prefixes.FAILURE + Prefixes.input(splitIpRange[0]) + " is not a valid IP.");
+            sender.sendMessage(Settings.format("InvalidIp", splitIpRange[0]));
             return true;
         }
 
         if(!DeltaBansUtils.isIp(splitIpRange[1]))
         {
-            sender.sendMessage(Prefixes.FAILURE + Prefixes.input(splitIpRange[1]) + " is not a valid IP.");
+            sender.sendMessage(Settings.format("InvalidIp", splitIpRange[1]));
             return true;
         }
 
@@ -126,25 +126,36 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
 
         if(firstAsLong == secondAsLong)
         {
-            sender.sendMessage(Prefixes.FAILURE + "Use an IP ban instead.");
+            sender.sendMessage(Settings.format("InvalidRange", args[0]));
+            return true;
         }
-        else if(firstAsLong > secondAsLong)
+
+        String channelMessage;
+
+        if(firstAsLong > secondAsLong)
         {
-            String channelMessage = buildChannelMessage(banner, message,
-                splitIpRange[1], splitIpRange[0], isSilent);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_BAN, channelMessage);
+            channelMessage = buildMessage(
+                banner,
+                message,
+                splitIpRange[1],
+                splitIpRange[0],
+                isSilent);
         }
         else
         {
-            String channelMessage = buildChannelMessage(banner, message,
-                splitIpRange[0], splitIpRange[1], isSilent);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_BAN, channelMessage);
+            channelMessage = buildMessage(
+                banner,
+                message,
+                splitIpRange[0],
+                splitIpRange[1],
+                isSilent);
         }
 
+        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_BAN, channelMessage);
         return true;
     }
 
-    private String buildChannelMessage(String name, String message, String start, String end, boolean isSilent)
+    private String buildMessage(String name, String message, String start, String end, boolean isSilent)
     {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(name);

@@ -1,34 +1,35 @@
 package com.gmail.tracebachi.DeltaBans.Spigot;
 
+import com.gmail.tracebachi.DbShare.DbShare;
+import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 2/21/16.
  */
 public class Settings
 {
-    private String database;
-    private String xAuthAccountsTable;
-    private Map<String, MessageFormat> formats;
-    private Map<Integer, List<String>> warningCommands;
+    private static boolean debugEnabled;
+    private static String database;
+    private static String xAuthAccountsTable;
+    private static Map<String, MessageFormat> formats = new HashMap<>();
+    private static Map<Integer, List<String>> warningCommands = new HashMap<>();
 
-    public void read(JavaPlugin plugin)
+    private Settings() {}
+
+    public static void read(FileConfiguration config)
     {
         ConfigurationSection section;
-        FileConfiguration config = plugin.getConfig();
 
+        formats.clear();
+        warningCommands.clear();
+        debugEnabled = config.getBoolean("DebugMode", false);
         database = config.getString("Database");
         xAuthAccountsTable = config.getString("xAuth-AccountsTable");
-        formats = new HashMap<>();
-        warningCommands = new HashMap<>();
 
         section = config.getConfigurationSection("Formats");
 
@@ -43,45 +44,45 @@ public class Settings
         {
             Integer intKey = parseInt(key);
 
-            if(intKey == null)
-            {
-                plugin.getLogger().severe(key + " is not a valid amount of warnings. Ignoring section.");
-            }
-            else
+            if(intKey != null)
             {
                 warningCommands.put(intKey, section.getStringList(key));
             }
         }
     }
 
-    public String getDatabase()
+    public static boolean isDebugEnabled()
     {
-        return database;
+        return debugEnabled;
     }
 
-    public String getIpCheckQuery()
+    public static void setDebugEnabled(boolean debugEnabled)
+    {
+        Settings.debugEnabled = debugEnabled;
+    }
+
+    public static HikariDataSource getDataSource()
+    {
+        return DbShare.getDataSource(database);
+    }
+
+    public static String getIpCheckQuery()
     {
         return "SELECT lastloginip FROM `" + xAuthAccountsTable + "` WHERE playername = ?;";
     }
 
-    public String format(String key, String... args)
+    public static String format(String key, String... args)
     {
         MessageFormat format = formats.get(key);
-
-        if(format == null)
-        {
-            return "{key: " + key + "} not found.";
-        }
-
-        return format.format(args);
+        return (format == null) ? "Unknown format for: " + key : format.format(args);
     }
 
-    public List<String> getWarningCommands(int amount)
+    public static List<String> getWarningCommands(int amount)
     {
         return warningCommands.getOrDefault(amount, Collections.emptyList());
     }
 
-    private Integer parseInt(String src)
+    private static Integer parseInt(String src)
     {
         try
         {

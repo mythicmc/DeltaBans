@@ -18,6 +18,7 @@ package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
+import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -66,14 +67,11 @@ public class SaveCommand implements CommandExecutor, Registerable, Shutdownable
     {
         if(!sender.hasPermission("DeltaBans.SaveBans"))
         {
-            sender.sendMessage(Prefixes.FAILURE + "You do not have the " +
-                Prefixes.input("DeltaBans.SaveBans") + " permission.");
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.SaveBans"));
             return true;
         }
 
-        String senderName = sender.getName();
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.SAVE, senderName);
-
+        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.SAVE, sender.getName());
         return true;
     }
 }
