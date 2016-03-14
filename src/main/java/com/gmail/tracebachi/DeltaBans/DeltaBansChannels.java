@@ -13,6 +13,8 @@ public interface DeltaBansChannels
     String RANGE_WHITELIST = "DB-Whitelist";
     String WARN = "DB-Warn";
     String UNWARN = "DB-Unwarn";
+    String WHITELIST_TOGGLE = "DB-WhitelistToggle";
+    String WHITELIST_EDIT = "DB-WhitelistEdit";
     String BANNED = "DB-Banned";
     String SAVE = "DB-Save";
     String KICK = "DB-Kick";

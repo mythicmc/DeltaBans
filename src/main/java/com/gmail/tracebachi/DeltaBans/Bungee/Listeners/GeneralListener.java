@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.gmail.tracebachi.DeltaBans.Bungee;
+package com.gmail.tracebachi.DeltaBans.Bungee.Listeners;
 
+import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans;
+import com.gmail.tracebachi.DeltaBans.Bungee.Settings;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.BanEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.BanStorage;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningEntry;
@@ -29,8 +31,11 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
+import net.md_5.bungee.api.connection.PendingConnection;
+import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
+import net.md_5.bungee.event.EventPriority;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -69,10 +74,24 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
     @Override
     public void shutdown()
     {
+        unregister();
         banStorage = null;
         warningStorage = null;
         deltaRedisApi = null;
         plugin = null;
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onLogin(LoginEvent event)
+    {
+        PendingConnection pending = event.getConnection();
+        String playerName = pending.getName();
+
+        if(Settings.isWhitelistEnabled() && !plugin.getWhitelist().contains(playerName))
+        {
+            event.setCancelReason(Settings.format("WhitelistMessage"));
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -114,15 +133,67 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
         else if(channel.equals(DeltaBansChannels.SAVE))
         {
             String sender = event.getMessage();
-            if(plugin.writeBansAndWarnings())
+
+            if(plugin.saveAll())
             {
                 deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
-                    Prefixes.SUCCESS + "Ban and warning files saved.");
+                    Settings.format("SaveSuccess"));
             }
             else
             {
                 deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
-                    Prefixes.FAILURE + "Error saving files. More details in the BungeeCord console.");
+                    Settings.format("SaveFailure"));
+            }
+        }
+        else if(channel.equals(DeltaBansChannels.WHITELIST_TOGGLE))
+        {
+            String sender = in.readUTF();
+            boolean enable = in.readBoolean();
+
+            if(enable)
+            {
+                Settings.setWhitelistEnabled(true);
+                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                    Settings.format("WhitelistToggle", "enabled"));
+            }
+            else
+            {
+                Settings.setWhitelistEnabled(false);
+                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                    Settings.format("WhitelistToggle", "enabled"));
+            }
+        }
+        else if(channel.equals(DeltaBansChannels.WHITELIST_EDIT))
+        {
+            String sender = in.readUTF();
+            boolean add = in.readBoolean();
+            String name = in.readUTF();
+
+            if(add)
+            {
+                if(plugin.getWhitelist().add(name))
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                        Settings.format("AddedToWhitelist", name));
+                }
+                else
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                        Settings.format("AlreadyInWhitelist", name));
+                }
+            }
+            else
+            {
+                if(plugin.getWhitelist().remove(name))
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                        Settings.format("RemovedFromWhitelist", name));
+                }
+                else
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                        Settings.format("NotInWhitelist", name));
+                }
             }
         }
     }

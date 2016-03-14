@@ -64,8 +64,8 @@ public class WarningStorage
             warnings = new ArrayList<>();
             warningsMap.put(name, warnings);
         }
-        warnings.add(entry);
 
+        warnings.add(entry);
         return warnings.size();
     }
 
@@ -91,9 +91,11 @@ public class WarningStorage
                 {
                     warnings.remove(warnings.size() - 1);
                 }
+
                 count++;
             }
         }
+
         return count;
     }
 
@@ -110,6 +112,7 @@ public class WarningStorage
             while(listIterator.hasNext())
             {
                 WarningEntry warningEntry = listIterator.next();
+
                 if(warningEntry.getCreatedAt() < oldestTime)
                 {
                     listIterator.remove();
@@ -126,6 +129,7 @@ public class WarningStorage
     public synchronized JsonArray toJson()
     {
         JsonArray array = new JsonArray();
+
         for(Map.Entry<String, List<WarningEntry>> entry : warningsMap.entrySet())
         {
             JsonObject object = new JsonObject();
@@ -139,6 +143,7 @@ public class WarningStorage
             object.addProperty("name", entry.getKey());
             object.add("warnings", warnings);
         }
+
         return array;
     }
 }

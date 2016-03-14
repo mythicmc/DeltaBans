@@ -168,9 +168,8 @@ public class KickCommand implements TabExecutor, Listener, Registerable, Shutdow
             {
                 String kickPlayer = Settings.format("KickMessageToPlayer", kicker, nameToKick, message);
                 toKick.kickPlayer(kickPlayer);
+                announceKick(kicker, nameToKick, message, isSilent.equals("1"));
             }
-
-            announceKick(kicker, nameToKick, message, isSilent.equals("1"));
         }
     }
 

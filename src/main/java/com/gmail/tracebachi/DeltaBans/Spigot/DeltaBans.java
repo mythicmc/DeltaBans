@@ -40,6 +40,7 @@ public class DeltaBans extends JavaPlugin
     private UnbanCommand unbanCommand;
     private UnwarnCommand unwarnCommand;
     private WarnCommand warnCommand;
+    private WhitelistCommand whitelistCommand;
 
     @Override
     public void onLoad()
@@ -64,7 +65,6 @@ public class DeltaBans extends JavaPlugin
         {
             e.printStackTrace();
             severe("Failed to connect to database containing xAuth account table. Shutting down ...");
-            getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
@@ -103,11 +103,17 @@ public class DeltaBans extends JavaPlugin
 
         warnCommand = new WarnCommand(deltaRedisApi, this);
         warnCommand.register();
+
+        whitelistCommand = new WhitelistCommand(deltaRedisApi, this);
+        whitelistCommand.register();
     }
 
     @Override
     public void onDisable()
     {
+        whitelistCommand.shutdown();
+        whitelistCommand = null;
+
         warnCommand.shutdown();
         warnCommand = null;
 

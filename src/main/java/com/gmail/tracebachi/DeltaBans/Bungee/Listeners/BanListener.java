@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.gmail.tracebachi.DeltaBans.Bungee;
+package com.gmail.tracebachi.DeltaBans.Bungee.Listeners;
 
+import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans;
+import com.gmail.tracebachi.DeltaBans.Bungee.Settings;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.BanEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.BanStorage;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.RangeBanEntry;
@@ -24,7 +26,6 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
@@ -49,11 +50,9 @@ import java.util.Set;
  */
 public class BanListener implements Listener, Registerable, Shutdownable
 {
-    private final String HIDDEN_IP = "\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r\u00A76.\u00A7k255\u00A7r";
+    private final String HIDDEN_IP = ChatColor.translateAlternateColorCodes('&',
+        "&k255&r&6.&k255&r&6.&k255&r&6.&k255&r");
 
-    private String permanentBanFormat;
-    private String temporaryBanFormat;
-    private String rangeBanFormat;
     private BanStorage banStorage;
     private RangeBanStorage rangeBanStorage;
     private Set<String> rangeBanWhitelist;
@@ -62,9 +61,6 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
     public BanListener(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
     {
-        this.permanentBanFormat = plugin.getPermanentBanFormat();
-        this.temporaryBanFormat = plugin.getTemporaryBanFormat();
-        this.rangeBanFormat = plugin.getRangeBanFormat();
         this.banStorage = plugin.getBanStorage();
         this.rangeBanStorage = plugin.getRangeBanStorage();
         this.rangeBanWhitelist = plugin.getRangeBanWhitelist();
@@ -87,10 +83,8 @@ public class BanListener implements Listener, Registerable, Shutdownable
     @Override
     public void shutdown()
     {
-        this.permanentBanFormat = null;
-        this.temporaryBanFormat = null;
+        unregister();
         this.rangeBanWhitelist = null;
-        this.rangeBanFormat = null;
         this.banStorage = null;
         this.rangeBanStorage = null;
         this.deltaRedisApi = null;
@@ -102,7 +96,6 @@ public class BanListener implements Listener, Registerable, Shutdownable
         PendingConnection pending = event.getConnection();
         String playerName = pending.getName().toLowerCase();
         String address = pending.getAddress().getAddress().getHostAddress();
-
         RangeBanEntry rangeBanEntry = rangeBanStorage.getIpRangeBan(address);
 
         if(rangeBanEntry != null)
@@ -189,15 +182,16 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
             // If an IP is being banned which is already banned, but also has no name
             boolean isIpBanned = banStorage.isIpBanned(ip);
+
             if(!hasName && isIpBanned)
             {
                 deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), banner,
-                    Prefixes.FAILURE + "IP is already banned.");
+                    Settings.format("AlreadyIpBanned", ip));
             }
             else if(hasName && isIpBanned && banStorage.isNameBanned(name))
             {
                 deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), banner,
-                    Prefixes.FAILURE + "Name and IP is already banned.");
+                    Settings.format("AlreadyIpBanned", name));
             }
             else
             {
@@ -212,6 +206,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
                     banMessage,
                     entry.hasDuration(),
                     isSilent);
+
                 announce(announcement, isSilent);
             }
         }
@@ -229,11 +224,12 @@ public class BanListener implements Listener, Registerable, Shutdownable
                 if(entries == null || entries.size() == 0)
                 {
                     deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
-                        Prefixes.INFO + "Ban not found for " + banee);
+                        Settings.format("BanNotFound", banee));
                 }
                 else
                 {
                     String announcement = formatUnbanAnnouncement(sender, banee, true, isSilent);
+
                     announce(announcement, isSilent);
                 }
             }
@@ -244,11 +240,12 @@ public class BanListener implements Listener, Registerable, Shutdownable
                 if(entry == null)
                 {
                     deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
-                        Prefixes.INFO + "Ban not found for " + banee);
+                        Settings.format("BanNotFound", banee));
                 }
                 else
                 {
                     String announcement = formatUnbanAnnouncement(sender, banee, false, isSilent);
+
                     announce(announcement, isSilent);
                 }
             }
@@ -263,15 +260,16 @@ public class BanListener implements Listener, Registerable, Shutdownable
             if(banStorage.isNameBanned(name))
             {
                 deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), banner,
-                    Prefixes.FAILURE + "Name is already banned.");
+                    Settings.format("AlreadyIpBanned", name));
             }
             else
             {
                 BanEntry entry = new BanEntry(name, null, banner, banMessage, null);
+                String announcement = formatBanAnnouncement(banner, name, false, banMessage, false, isSilent);
+
                 banStorage.add(entry);
                 kickOffProxy(name, null, getKickMessage(entry));
 
-                String announcement = formatBanAnnouncement(banner, name, false, banMessage, false, isSilent);
                 announce(announcement, isSilent);
             }
         }
@@ -287,6 +285,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
             rangeBanStorage.add(entry);
 
             BaseComponent[] kickMessage = TextComponent.fromLegacyText(getKickMessage(entry));
+
             for(ProxiedPlayer player : BungeeCord.getInstance().getPlayers())
             {
                 long ipAsLong = DeltaBansUtils.convertIpToLong(
@@ -298,7 +297,9 @@ public class BanListener implements Listener, Registerable, Shutdownable
                 }
             }
 
-            String announcement = formatRangeBanAnnouncement(banner, start + "-" + end, message);
+            String announcement = Settings.format("RangeBanAnnouncement",
+                banner, start + "-" + end, message);
+
             announce(announcement, isSilent);
         }
         else if(channel.equals(DeltaBansChannels.RANGE_UNBAN))
@@ -308,7 +309,9 @@ public class BanListener implements Listener, Registerable, Shutdownable
             boolean isSilent = in.readBoolean();
             int count = rangeBanStorage.removeIpRangeBan(ip);
 
-            String announcement = formatRangeUnbanAnnouncement(banner, ip, count);
+            String announcement = Settings.format("RangeUnbanAnnouncement",
+                banner, String.valueOf(count), ip);
+
             announce(announcement, isSilent);
         }
         else if(channel.equals(DeltaBansChannels.RANGE_WHITELIST))
@@ -319,15 +322,29 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
             if(isAdd)
             {
-                rangeBanWhitelist.add(nameToUpdate.toLowerCase());
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
-                    Prefixes.SUCCESS + Prefixes.input(nameToUpdate) + " added to range whitelist.");
+                if(rangeBanWhitelist.add(nameToUpdate.toLowerCase()))
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
+                        Settings.format("AddedToRangeBanWhitelist", nameToUpdate));
+                }
+                else
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
+                        Settings.format("AlreadyInRangeBanWhitelist", nameToUpdate));
+                }
             }
             else
             {
-                rangeBanWhitelist.remove(nameToUpdate.toLowerCase());
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
-                    Prefixes.SUCCESS + Prefixes.input(nameToUpdate) + " removed from range whitelist.");
+                if(rangeBanWhitelist.remove(nameToUpdate.toLowerCase()))
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
+                        Settings.format("RemovedFromRangeBanWhitelist", nameToUpdate));
+                }
+                else
+                {
+                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
+                        Settings.format("NotInRangeBanWhitelist", nameToUpdate));
+                }
             }
         }
     }
@@ -339,6 +356,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
         if(name != null)
         {
             ProxiedPlayer proxiedPlayer = BungeeCord.getInstance().getPlayer(name);
+
             if(proxiedPlayer != null)
             {
                 proxiedPlayer.disconnect(componentMessage.clone());
@@ -360,36 +378,40 @@ public class BanListener implements Listener, Registerable, Shutdownable
     private String formatBanAnnouncement(String banner, String banee, boolean isIp, String message,
         boolean isTemporary, boolean isSilent)
     {
-        return ChatColor.GOLD + banner +
-            ChatColor.WHITE + ((isTemporary) ? " temp-banned " : " banned ") +
-            ChatColor.GOLD + ((isIp && !isSilent) ? HIDDEN_IP : banee) +
-            ChatColor.WHITE + " for " +
-            ChatColor.GOLD + message;
-    }
-
-    private String formatRangeBanAnnouncement(String banner, String range, String message)
-    {
-        return ChatColor.GOLD + banner +
-            ChatColor.WHITE + " range-banned " +
-            ChatColor.GOLD + range +
-            ChatColor.WHITE + " for " +
-            ChatColor.GOLD + message;
+        if(!isTemporary)
+        {
+            if(isIp && !isSilent)
+            {
+                return Settings.format("BanAnnouncement", banner, HIDDEN_IP, message);
+            }
+            else
+            {
+                return Settings.format("BanAnnouncement", banner, banee, message);
+            }
+        }
+        else
+        {
+            if(isIp && !isSilent)
+            {
+                return Settings.format("TempBanAnnouncement", banner, HIDDEN_IP, message);
+            }
+            else
+            {
+                return Settings.format("TempBanAnnouncement", banner, banee, message);
+            }
+        }
     }
 
     private String formatUnbanAnnouncement(String sender, String banee, boolean isIp, boolean isSilent)
     {
-        return ChatColor.GOLD + sender +
-            ChatColor.WHITE + " unbanned " +
-            ChatColor.GOLD + ((isIp && !isSilent) ? HIDDEN_IP : banee);
-    }
-
-    private String formatRangeUnbanAnnouncement(String sender, String ip, int count)
-    {
-        return ChatColor.GOLD + sender +
-            ChatColor.WHITE + " unbanned " +
-            ChatColor.GOLD + count +
-            ChatColor.WHITE + " IP ranges overlapping with " +
-            ChatColor.GOLD + ip;
+        if(isIp && !isSilent)
+        {
+            return Settings.format("UnbanAnnouncement", sender, HIDDEN_IP);
+        }
+        else
+        {
+            return Settings.format("UnbanAnnouncement", sender, banee);
+        }
     }
 
     private void announce(String announcement, boolean isSilent)
@@ -407,12 +429,16 @@ public class BanListener implements Listener, Registerable, Shutdownable
             long currentTime = System.currentTimeMillis();
             long remainingTime = entry.getCreatedAt() + entry.getDuration() - currentTime;
 
-            result = String.format(temporaryBanFormat, entry.getMessage(), entry.getBanner(),
+            result = Settings.format("TemporaryBanMessage",
+                entry.getMessage(),
+                entry.getBanner(),
                 DeltaBansUtils.formatDuration(remainingTime));
         }
         else
         {
-            result = String.format(permanentBanFormat, entry.getMessage(), entry.getBanner());
+            result = Settings.format("PermanentBanMessage",
+                entry.getMessage(),
+                entry.getBanner());
         }
 
         return ChatColor.translateAlternateColorCodes('&', result);
@@ -420,7 +446,10 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
     private String getKickMessage(RangeBanEntry entry)
     {
-        String result = String.format(rangeBanFormat, entry.getMessage(), entry.getBanner());
+        String result = Settings.format("RangeBanMessage",
+            entry.getMessage(),
+            entry.getBanner());
+
         return ChatColor.translateAlternateColorCodes('&', result);
     }
 }

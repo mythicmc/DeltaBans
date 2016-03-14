@@ -78,6 +78,7 @@ public class BanStorage
         if(ban.hasIp())
         {
             Set<BanEntry> bansOnIp = ipMap.get(ban.getIp());
+
             if(bansOnIp != null)
             {
                 // Remove the ban from the set
@@ -85,7 +86,7 @@ public class BanStorage
 
                 if(bansOnIp.size() == 0)
                 {
-                    // Remove all the now-empty list
+                    // Remove the now-empty list
                     ipMap.remove(ban.getIp());
                 }
             }
@@ -171,10 +172,12 @@ public class BanStorage
     public synchronized JsonArray toJson()
     {
         JsonArray array = new JsonArray();
+
         for(BanEntry entry : banSet)
         {
             array.add(entry.toJson());
         }
+
         return array;
     }
 }

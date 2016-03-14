@@ -1,6 +1,6 @@
 name: DeltaBans
 main: com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans
-version: 1.5
+version: 1.6
 author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
 depend: [DeltaRedis, xAuth]
 commands:
@@ -34,10 +34,15 @@ commands:
   rangeunban:
     description: Allows the user to unban an ip range.
     aliases: [dbrangeunban]
-  rangewhitelist:
+  rangebanwhitelist:
     description: Allows the user to whitelist a name in a rangeban.
+    aliases: [dbrangebanwhitelist]
   deltabanssave:
     description: Allows the user to force save ban and warning files.
+    aliases: [dbsave]
+  whitelist:
+    description: Allows the user to edit or toggle the network whitelist.
+    aliases: [dbwhitelist]
 
 permissions:
   DeltaBans.Ban:
@@ -52,5 +57,7 @@ permissions:
     description: Permission for issuing warnings.
   DeltaBans.Kick:
     description: Permission for kicking.
+  DeltaBans.Whitelist:
+    description: Permission for edit or toggle whitelist.
   DeltaBans.Save:
     description: Permission for forcing save of ban and warning files.

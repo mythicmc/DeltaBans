@@ -16,6 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee;
 
+import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.BanListener;
+import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.GeneralListener;
+import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.WarningListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.*;
 import com.gmail.tracebachi.DeltaRedis.Bungee.ConfigUtil;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedis;
@@ -37,24 +40,22 @@ import java.util.concurrent.TimeUnit;
 public class DeltaBans extends Plugin
 {
     private Configuration config;
+    private GeneralListener generalListener;
     private BanStorage banStorage;
     private BanListener banListener;
     private WarningStorage warningStorage;
     private WarningListener warningListener;
     private RangeBanStorage rangeBanStorage;
     private final Set<String> rangeBanWhitelist = new ConcurrentSet<>();
-    private GeneralListener generalListener;
+    private final Set<String> whitelist = new ConcurrentSet<>();
     private final Object saveLock = new Object();
 
     @Override
     public void onEnable()
     {
         reloadConfig();
-        if(config == null) { return; }
-
-        int minutesPerBanSave = config.getInt("MinutesPerBanSave");
-        int minutesPerWarningCleanup = config.getInt("MinutesPerWarningCleanup");
-        int warningDuration = config.getInt("WarningDuration");
+        if(config == null) return;
+        Settings.read(config);
 
         banStorage = new BanStorage();
         readBans();
@@ -63,6 +64,7 @@ public class DeltaBans extends Plugin
         rangeBanStorage = new RangeBanStorage();
         readRangeBans();
         readRangeBanWhitelist();
+        readWhitelist();
 
         DeltaRedis deltaRedisPlugin = (DeltaRedis) getProxy()
             .getPluginManager().getPlugin("DeltaRedis");
@@ -77,11 +79,17 @@ public class DeltaBans extends Plugin
         generalListener = new GeneralListener(deltaRedisApi, this);
         generalListener.register();
 
-        getProxy().getScheduler().schedule(this, this::writeBansAndWarnings,
-            minutesPerBanSave, minutesPerBanSave, TimeUnit.MINUTES);
-        getProxy().getScheduler().schedule(this, () ->
-            warningStorage.cleanupWarnings(warningDuration),
-            minutesPerWarningCleanup, minutesPerWarningCleanup, TimeUnit.MINUTES);
+        getProxy().getScheduler().schedule(this,
+            this::saveAll,
+            Settings.getMinutesPerBanSave(),
+            Settings.getMinutesPerBanSave(),
+            TimeUnit.MINUTES);
+
+        getProxy().getScheduler().schedule(this,
+            () -> warningStorage.cleanupWarnings(Settings.getWarningDuration()),
+            Settings.getMinutesPerWarningCleanup(),
+            Settings.getMinutesPerWarningCleanup(),
+            TimeUnit.MINUTES);
     }
 
     @Override
@@ -100,7 +108,7 @@ public class DeltaBans extends Plugin
 
         if(banStorage != null && warningStorage != null && rangeBanStorage != null)
         {
-            writeBansAndWarnings();
+            saveAll();
             banStorage = null;
             warningStorage = null;
             rangeBanStorage = null;
@@ -111,21 +119,6 @@ public class DeltaBans extends Plugin
             getLogger().severe("Failed to save ban files on shutdown! " +
                 "One of the storages was not initialized correctly.");
         }
-    }
-
-    public String getPermanentBanFormat()
-    {
-        return (config != null) ? config.getString("PermanentBan") : "BAD_CONFIG";
-    }
-
-    public String getTemporaryBanFormat()
-    {
-        return (config != null) ? config.getString("TemporaryBan") : "BAD_CONFIG";
-    }
-
-    public String getRangeBanFormat()
-    {
-        return (config != null) ? config.getString("RangeBan") : "BAD_CONFIG";
     }
 
     public BanStorage getBanStorage()
@@ -143,32 +136,64 @@ public class DeltaBans extends Plugin
         return rangeBanWhitelist;
     }
 
+    public Set<String> getWhitelist()
+    {
+        return whitelist;
+    }
+
     public WarningStorage getWarningStorage()
     {
         return warningStorage;
     }
 
-    public boolean writeBansAndWarnings()
+    public Configuration getConfig()
     {
-        getLogger().info("Saving bans and warnings ...");
+        return config;
+    }
 
-        File banFile = new File(getDataFolder(), "bans.json");
-        File rangeBanFile = new File(getDataFolder(), "rangebans.json");
-        File warningFile = new File(getDataFolder(), "warnings.json");
-        File rangeBanWhitelistFile = new File(getDataFolder(), "rangeban-whitelist.json");
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonArray banArray = banStorage.toJson();
-        JsonArray rangeBanArray = rangeBanStorage.toJson();
-        JsonArray warningArray = warningStorage.toJson();
-        JsonArray rangeBanWhitelistArray = new JsonArray();
-
-        synchronized(rangeBanWhitelist)
+    public void reloadConfig()
+    {
+        try
         {
-            for(String name : rangeBanWhitelist)
+            File file = ConfigUtil.saveResource(this, "bungee-config.yml", "config.yml");
+            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+
+            if(config == null)
             {
-                rangeBanWhitelistArray.add(new JsonPrimitive(name));
+                ConfigUtil.saveResource(this, "bungee-config.yml", "config-example.yml", true);
+                getLogger().severe("Invalid configuration file! An example configuration has been saved to the DeltaBans folder.");
             }
         }
+        catch(IOException e)
+        {
+            getLogger().severe("Failed to load configuration file.");
+            e.printStackTrace();
+        }
+    }
+
+    public boolean saveAll()
+    {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        boolean result;
+
+        getLogger().info("Saving bans ...");
+        result = saveBans(gson);
+
+        getLogger().info("Saving warnings ...");
+        result &= saveWarnings(gson);
+
+        getLogger().info("Saving whitelists ...");
+        result &= saveWhitelists(gson);
+
+        return result;
+    }
+
+    private boolean saveBans(Gson gson)
+    {
+        JsonArray banArray = banStorage.toJson();
+        JsonArray rangeBanArray = rangeBanStorage.toJson();
+        File banFile = new File(getDataFolder(), "bans.json");
+        File rangeBanFile = new File(getDataFolder(), "rangebans.json");
 
         synchronized(saveLock)
         {
@@ -194,6 +219,17 @@ public class DeltaBans extends Plugin
                 return false;
             }
 
+            return true;
+        }
+    }
+
+    private boolean saveWarnings(Gson gson)
+    {
+        JsonArray warningArray = warningStorage.toJson();
+        File warningFile = new File(getDataFolder(), "warnings.json");
+
+        synchronized(saveLock)
+        {
             try(BufferedWriter writer = new BufferedWriter(new FileWriter(warningFile)))
             {
                 gson.toJson(warningArray, writer);
@@ -205,10 +241,50 @@ public class DeltaBans extends Plugin
                 return false;
             }
 
+            return true;
+        }
+    }
+
+    private boolean saveWhitelists(Gson gson)
+    {
+        JsonArray whitelistArray = new JsonArray();
+        JsonArray rangeBanWhitelistArray = new JsonArray();
+        File whitelistFile = new File(getDataFolder(), "whitelist.json");
+        File rangeBanWhitelistFile = new File(getDataFolder(), "rangeban-whitelist.json");
+
+        synchronized(whitelist)
+        {
+            for(String name : whitelist)
+            {
+                whitelistArray.add(new JsonPrimitive(name));
+            }
+        }
+
+        synchronized(rangeBanWhitelist)
+        {
+            for(String name : rangeBanWhitelist)
+            {
+                rangeBanWhitelistArray.add(new JsonPrimitive(name));
+            }
+        }
+
+        synchronized(saveLock)
+        {
+            try(BufferedWriter writer = new BufferedWriter(new FileWriter(whitelistFile)))
+            {
+                gson.toJson(whitelistArray, writer);
+                getLogger().info("Done saving whitelist.");
+            }
+            catch(IOException e)
+            {
+                e.printStackTrace();
+                return false;
+            }
+
             try(BufferedWriter writer = new BufferedWriter(new FileWriter(rangeBanWhitelistFile)))
             {
                 gson.toJson(rangeBanWhitelistArray, writer);
-                getLogger().info("Done saving rangeban whitelist.");
+                getLogger().info("Done saving range ban whitelist.");
             }
             catch(IOException e)
             {
@@ -331,6 +407,8 @@ public class DeltaBans extends Plugin
         {
             JsonArray array = parser.parse(reader).getAsJsonArray();
 
+            rangeBanWhitelist.clear();
+
             for(JsonElement element : array)
             {
                 String name = element.getAsString();
@@ -343,24 +421,29 @@ public class DeltaBans extends Plugin
         }
     }
 
-    private void reloadConfig()
+    private void readWhitelist()
     {
-        try
-        {
-            File file = ConfigUtil.saveResource(this, "bungee-config.yml", "config.yml");
-            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+        File file = new File(getDataFolder(), "whitelist.json");
 
-            if(config == null)
+        if(!file.exists()) { return; }
+
+        JsonParser parser = new JsonParser();
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            JsonArray array = parser.parse(reader).getAsJsonArray();
+
+            whitelist.clear();
+
+            for(JsonElement element : array)
             {
-                ConfigUtil.saveResource(this, "bungee-config.yml", "config-example.yml", true);
-                getLogger().severe("Invalid configuration file! An example configuration has been saved to the DeltaBans folder.");
+                String name = element.getAsString();
+                whitelist.add(name);
             }
         }
         catch(IOException e)
         {
-            getLogger().severe("Failed to load configuration file.");
             e.printStackTrace();
         }
-
     }
 }

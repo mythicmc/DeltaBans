@@ -2,11 +2,15 @@ package com.gmail.tracebachi.DeltaBans.Spigot;
 
 import com.gmail.tracebachi.DbShare.DbShare;
 import com.zaxxer.hikari.HikariDataSource;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 2/21/16.
@@ -35,7 +39,9 @@ public class Settings
 
         for(String key : section.getKeys(false))
         {
-            formats.put(key, new MessageFormat(section.getString(key)));
+            String translated = ChatColor.translateAlternateColorCodes('&', section.getString(key));
+
+            formats.put(key, new MessageFormat(translated));
         }
 
         section = config.getConfigurationSection("WarningCommands");

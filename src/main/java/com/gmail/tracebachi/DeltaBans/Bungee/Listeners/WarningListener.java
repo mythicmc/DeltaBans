@@ -14,21 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.gmail.tracebachi.DeltaBans.Bungee;
+package com.gmail.tracebachi.DeltaBans.Bungee.Listeners;
 
+import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans;
+import com.gmail.tracebachi.DeltaBans.Bungee.Settings;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningStorage;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
-import com.gmail.tracebachi.DeltaRedis.Shared.Prefixes;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
@@ -65,6 +65,7 @@ public class WarningListener implements Listener, Registerable, Shutdownable
     @Override
     public void shutdown()
     {
+        unregister();
         warningStorage = null;
         deltaRedisApi = null;
         plugin = null;
@@ -94,7 +95,8 @@ public class WarningListener implements Listener, Registerable, Shutdownable
             deltaRedisApi.publish(event.getSendingServer(), DeltaBansChannels.WARN,
                 new String(out.toByteArray(), StandardCharsets.UTF_8));
 
-            String announcement = formatWarnAnnouncement(warner, name, message);
+            String announcement = Settings.format("WarnAnnouncement", warner, name, message);
+
             deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT, announcement,
                 isSilent ? "DeltaBans.SeeSilent" : "");
         }
@@ -105,18 +107,9 @@ public class WarningListener implements Listener, Registerable, Shutdownable
             int amount = Integer.parseInt(in.readUTF(), 16);
 
             amount = warningStorage.remove(name, amount);
-            deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), warner,
-                Prefixes.SUCCESS + "Removed " + Prefixes.input(amount) +
-                " warnings for " + name);
-        }
-    }
 
-    private String formatWarnAnnouncement(String warner, String name, String message)
-    {
-        return ChatColor.GOLD + warner +
-            ChatColor.WHITE + " warned " +
-            ChatColor.GOLD + name +
-            ChatColor.WHITE + " for " +
-            ChatColor.GOLD + message;
+            deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), warner,
+                Settings.format("RemovedWarnings", String.valueOf(amount), name));
+        }
     }
 }

@@ -34,6 +34,7 @@ public class RangeBanStorage
     public synchronized void add(RangeBanEntry ban)
     {
         Preconditions.checkNotNull(ban, "Ban cannot be null.");
+
         rangeBanList.add(ban);
     }
 
@@ -55,27 +56,31 @@ public class RangeBanStorage
     {
         int count = 0;
         long ipAsLong = DeltaBansUtils.convertIpToLong(ip);
-
         ListIterator<RangeBanEntry> iterator = rangeBanList.listIterator();
+
         while(iterator.hasNext())
         {
             RangeBanEntry entry = iterator.next();
+
             if(ipAsLong >= entry.getStartAddressLong() && ipAsLong <= entry.getEndAddressLong())
             {
                 iterator.remove();
                 count++;
             }
         }
+
         return count;
     }
 
     public synchronized JsonArray toJson()
     {
         JsonArray array = new JsonArray();
+
         for(RangeBanEntry entry : rangeBanList)
         {
             array.add(entry.toJson());
         }
+
         return array;
     }
 }

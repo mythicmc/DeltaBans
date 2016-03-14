@@ -42,9 +42,9 @@ public class RangeBanEntry
     public RangeBanEntry(String banner, String message, String startAddress, String endAddress, long createdAt)
     {
         Preconditions.checkNotNull(banner, "Banner cannot be null");
-        Preconditions.checkNotNull(message, "Banner cannot be null");
-        Preconditions.checkNotNull(startAddress, "Banner cannot be null");
-        Preconditions.checkNotNull(endAddress, "Banner cannot be null");
+        Preconditions.checkNotNull(message, "Message cannot be null");
+        Preconditions.checkNotNull(startAddress, "Start address cannot be null");
+        Preconditions.checkNotNull(endAddress, "End address cannot be null");
         Preconditions.checkArgument(DeltaBansUtils.isIp(startAddress), "Start address is not an IP.");
         Preconditions.checkArgument(DeltaBansUtils.isIp(endAddress), "End address is not an IP.");
 
