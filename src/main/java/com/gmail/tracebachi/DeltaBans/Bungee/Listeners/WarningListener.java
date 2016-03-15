@@ -97,8 +97,18 @@ public class WarningListener implements Listener, Registerable, Shutdownable
 
             String announcement = Settings.format("WarnAnnouncement", warner, name, message);
 
-            deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT, announcement,
-                isSilent ? "DeltaBans.SeeSilent" : "");
+            if(isSilent)
+            {
+                deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+                    Settings.format("SilentPrefix") + announcement,
+                    "DeltaBans.SeeSilent");
+            }
+            else
+            {
+                deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+                    announcement,
+                    "");
+            }
         }
         else if(channel.equalsIgnoreCase(DeltaBansChannels.UNWARN))
         {

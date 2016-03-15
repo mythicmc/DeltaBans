@@ -19,12 +19,13 @@ Formats:
   TemporaryBanMessage: "{0} - {1}\n\nThis ban is temporary and will expire in:\n{3}"
   RangeBanMessage: "{0} - {1}\n\nIf you need to be exempted from this range ban, contact an administrator of this server."
 
-  BanAnnouncement: '&8[&6!&8] &6Ban &8[&6!&8]&6 &f{0}&6 banned &f{1}&6 for &f{2}&6.'
-  UnbanAnnouncement: '&8[&6!&8] &6Unban &8[&6!&8]&6 &f{0}&6 unbanned &f{1}&6.'
-  TempBanAnnouncement: '&8[&6!&8] &6Ban &8[&6!&8]&6 &f{0}&6 temp-banned &f{1}&6 for &f{2}&6.'
-  RangeBanAnnouncement: '&8[&6!&8] &6Ban &8[&6!&8]&6 &f{0}&6 range-banned &f{1}&6 for &f{2}&6.'
-  RangeUnbanAnnouncement: '&8[&6!&8] &6Unban &8[&6!&8]&6 &f{0}&6 unbanned &f{1}&6 IP ranges that overlapped with &f{2}&6'
-  WarnAnnouncement: '&8[&6!&8] &6Warn &8[&6!&8]&6 &f{0}&6 warned &f{1}&6 for &f{2}&6.'
+  SilentPrefix: '&8[&6Silent&8]&6'
+  BanAnnouncement: '&8[&6Ban&8]&6 &f{0}&6 banned &f{1}&6 for &f{2}&6.'
+  UnbanAnnouncement: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6.'
+  TempBanAnnouncement: '&8[&6Ban&8]&6 &f{0}&6 temp-banned &f{1}&6 for &f{2}&6.'
+  RangeBanAnnouncement: '&8[&6Ban&8]&6 &f{0}&6 range-banned &f{1}&6 for &f{2}&6.'
+  RangeUnbanAnnouncement: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6 IP ranges that overlapped with &f{2}&6'
+  WarnAnnouncement: '&8[&6Warn&8]&6 &f{0}&6 warned &f{1}&6 for &f{2}&6.'
 
   AddedToRangeBanWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Added &f{0}&7 to range-ban whitelist.'
   AlreadyInRangeBanWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already in the range-ban whitelist.'
