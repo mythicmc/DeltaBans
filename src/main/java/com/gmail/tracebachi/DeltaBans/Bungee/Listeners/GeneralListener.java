@@ -160,7 +160,7 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
             {
                 Settings.setWhitelistEnabled(false);
                 deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
-                    Settings.format("WhitelistToggle", "enabled"));
+                    Settings.format("WhitelistToggle", "disabled"));
             }
         }
         else if(channel.equals(DeltaBansChannels.WHITELIST_EDIT))
