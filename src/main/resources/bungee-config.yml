@@ -16,7 +16,7 @@ Whitelist: False
 Formats:
 
   PermanentBanMessage: "{0} - {1}\n\nThis ban is a permanent ban."
-  TemporaryBanMessage: "{0} - {1}\n\nThis ban is temporary and will expire in:\n{3}"
+  TemporaryBanMessage: "{0} - {1}\n\nThis ban is temporary and will expire in:\n{2}"
   RangeBanMessage: "{0} - {1}\n\nIf you need to be exempted from this range ban, contact an administrator of this server."
 
   SilentPrefix: '&8[&6Silent&8]&6'
