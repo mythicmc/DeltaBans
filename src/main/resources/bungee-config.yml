@@ -22,7 +22,7 @@ Formats:
   SilentPrefix: '&8[&6Silent&8]&6'
   BanAnnouncement: '&8[&6Ban&8]&6 &f{0}&6 banned &f{1}&6 for &f{2}&6.'
   UnbanAnnouncement: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6.'
-  TempBanAnnouncement: '&8[&6Ban&8]&6 &f{0}&6 temp-banned &f{1}&6 for &f{2}&6.'
+  TempBanAnnouncement: '&8[&6Ban&8]&6 &f{0}&6 temp-banned &f{1}&6 for &f{2}&6. Reason: &f{3}&6.'
   RangeBanAnnouncement: '&8[&6Ban&8]&6 &f{0}&6 range-banned &f{1}&6 for &f{2}&6.'
   RangeUnbanAnnouncement: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6 IP ranges that overlapped with &f{2}&6'
   WarnAnnouncement: '&8[&6Warn&8]&6 &f{0}&6 warned &f{1}&6 for &f{2}&6.'
@@ -39,7 +39,7 @@ Formats:
   RemovedFromWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Removed &f{0}&7 from whitelist.'
   NotInWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not in the whitelist.'
 
-  RemovedWarnings: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Removed &f{0}&7 warnings for &f{1}&7.'
+  RemovedWarnings: '&8[&a!&8] &aSuccess &8[&a!&8]&7 &f{0}&7 removed &f{1}&7 warnings from &f{2}&7.'
 
   SaveSucess: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Bans, warnings, range-whitelist, and whitelist have been saved.'
   SaveFailure: '&8[&c!&8] &cFailure &8[&c!&8]&7 There was an error saving. More details available in the BungeeCord logs.'

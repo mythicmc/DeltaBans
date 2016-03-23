@@ -115,11 +115,25 @@ public class WarningListener implements Listener, Registerable, Shutdownable
             String warner = in.readUTF();
             String name = in.readUTF();
             int amount = Integer.parseInt(in.readUTF(), 16);
+            boolean isSilent = in.readBoolean();
 
             amount = warningStorage.remove(name, amount);
 
-            deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), warner,
-                Settings.format("RemovedWarnings", String.valueOf(amount), name));
+            String announcement = Settings.format("RemovedWarnings",
+                warner, String.valueOf(amount), name);
+
+            if(isSilent)
+            {
+                deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+                    Settings.format("SilentPrefix") + announcement,
+                    "DeltaBans.SeeSilent");
+            }
+            else
+            {
+                deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+                    announcement,
+                    "");
+            }
         }
     }
 }

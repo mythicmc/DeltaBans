@@ -204,7 +204,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
                     (hasName) ? name : ip,
                     !hasName,
                     banMessage,
-                    entry.hasDuration(),
+                    entry.getDuration(),
                     isSilent);
 
                 announce(announcement, isSilent);
@@ -265,7 +265,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
             else
             {
                 BanEntry entry = new BanEntry(name, null, banner, banMessage, null);
-                String announcement = formatBanAnnouncement(banner, name, false, banMessage, false, isSilent);
+                String announcement = formatBanAnnouncement(banner, name, false, banMessage, null, isSilent);
 
                 banStorage.add(entry);
                 kickOffProxy(name, null, getKickMessage(entry));
@@ -376,9 +376,9 @@ public class BanListener implements Listener, Registerable, Shutdownable
     }
 
     private String formatBanAnnouncement(String banner, String banee, boolean isIp, String message,
-        boolean isTemporary, boolean isSilent)
+        Long duration, boolean isSilent)
     {
-        if(!isTemporary)
+        if(duration == null)
         {
             if(isIp && !isSilent)
             {
@@ -393,11 +393,13 @@ public class BanListener implements Listener, Registerable, Shutdownable
         {
             if(isIp && !isSilent)
             {
-                return Settings.format("TempBanAnnouncement", banner, HIDDEN_IP, message);
+                return Settings.format("TempBanAnnouncement", banner, HIDDEN_IP,
+                    DeltaBansUtils.formatDuration(duration), message);
             }
             else
             {
-                return Settings.format("TempBanAnnouncement", banner, banee, message);
+                return Settings.format("TempBanAnnouncement", banner, banee,
+                    DeltaBansUtils.formatDuration(duration), message);
             }
         }
     }
