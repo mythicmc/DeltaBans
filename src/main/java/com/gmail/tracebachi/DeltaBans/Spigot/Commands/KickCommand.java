@@ -120,21 +120,9 @@ public class KickCommand implements TabExecutor, Listener, Registerable, Shutdow
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        Player toKick = Bukkit.getPlayer(nameToKick);
-
-        if(toKick != null)
-        {
-            String kickPlayer = Settings.format("KickMessageToPlayer", kicker, nameToKick, message);
-
-            toKick.kickPlayer(kickPlayer);
-            announceKick(kicker, nameToKick, message, isSilent);
-            return true;
-        }
-
         final String finalMessage = message;
-        DeltaRedisApi api = DeltaRedisApi.instance();
 
-        api.findPlayer(nameToKick, cachedPlayer ->
+        DeltaRedisApi.instance().findPlayer(nameToKick, cachedPlayer ->
         {
             if(cachedPlayer == null)
             {
@@ -142,7 +130,7 @@ public class KickCommand implements TabExecutor, Listener, Registerable, Shutdow
                 return;
             }
 
-            api.publish(
+            DeltaRedisApi.instance().publish(
                 Servers.SPIGOT,
                 DeltaBansChannels.KICK,
                 kicker,
@@ -182,7 +170,11 @@ public class KickCommand implements TabExecutor, Listener, Registerable, Shutdow
 
     private void announceKick(String kicker, String nameToKick, String message, boolean isSilent)
     {
-        String kickAnnounce = Settings.format("KickMessageToAnnounce", kicker, nameToKick, message);
+        String kickAnnounce = Settings.format(
+            "KickMessageToAnnounce",
+            kicker,
+            nameToKick,
+            message);
 
         DeltaRedisApi.instance().sendAnnouncementToServer(
             Servers.SPIGOT,
