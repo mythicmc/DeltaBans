@@ -37,12 +37,10 @@ import java.util.List;
  */
 public class WhitelistCommand implements TabExecutor, Registerable, Shutdownable
 {
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public WhitelistCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public WhitelistCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -64,7 +62,6 @@ public class WhitelistCommand implements TabExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -72,7 +69,7 @@ public class WhitelistCommand implements TabExecutor, Registerable, Shutdownable
     public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args)
     {
         String lastArg = args[args.length - 1];
-        return deltaRedisApi.matchStartOfPlayerName(lastArg);
+        return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
     }
 
     @Override
@@ -90,25 +87,27 @@ public class WhitelistCommand implements TabExecutor, Registerable, Shutdownable
             return true;
         }
 
+        DeltaRedisApi api = DeltaRedisApi.instance();
+
         if(args[0].equalsIgnoreCase("on"))
         {
             String channelMessage = buildToggleWhitelistMessage(sender.getName(), true);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_TOGGLE, channelMessage);
+            api.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_TOGGLE, channelMessage);
         }
         else if(args[0].equalsIgnoreCase("off"))
         {
             String channelMessage = buildToggleWhitelistMessage(sender.getName(), false);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_TOGGLE, channelMessage);
+            api.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_TOGGLE, channelMessage);
         }
         else if(args.length > 1 && args[0].equalsIgnoreCase("add"))
         {
             String channelMessage = buildEditWhitelistMessage(sender.getName(), true, args[1]);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_EDIT, channelMessage);
+            api.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_EDIT, channelMessage);
         }
         else if(args.length > 1 && args[0].equalsIgnoreCase("remove"))
         {
             String channelMessage = buildEditWhitelistMessage(sender.getName(), false, args[1]);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_EDIT, channelMessage);
+            api.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_EDIT, channelMessage);
         }
         else
         {

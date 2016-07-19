@@ -40,12 +40,10 @@ import java.util.List;
  */
 public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
 {
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public TempBanCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public TempBanCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -67,7 +65,6 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -75,7 +72,7 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
     public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
     {
         String lastArg = args[args.length - 1];
-        return deltaRedisApi.matchStartOfPlayerName(lastArg);
+        return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
     }
 
     @Override
@@ -137,7 +134,11 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
 
         String channelMessage = buildMessage(banner, message, possibleIp, duration, name, isSilent);
 
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.BAN, channelMessage);
+        DeltaRedisApi.instance().publish(
+            Servers.BUNGEECORD,
+            DeltaBansChannels.BAN,
+            channelMessage);
+
         return true;
     }
 

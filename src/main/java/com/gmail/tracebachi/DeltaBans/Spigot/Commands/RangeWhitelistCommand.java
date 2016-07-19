@@ -38,12 +38,10 @@ import java.util.List;
  */
 public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdownable
 {
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public RangeWhitelistCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public RangeWhitelistCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -65,7 +63,6 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -73,7 +70,7 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
     public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args)
     {
         String lastArg = args[args.length - 1];
-        return deltaRedisApi.matchStartOfPlayerName(lastArg);
+        return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
     }
 
     @Override
@@ -101,12 +98,20 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
         if(args[0].equalsIgnoreCase("add"))
         {
             String channelMessage = buildMessage(sender.getName(), args[1], true);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_WHITELIST, channelMessage);
+
+            DeltaRedisApi.instance().publish(
+                Servers.BUNGEECORD,
+                DeltaBansChannels.RANGE_WHITELIST,
+                channelMessage);
         }
         else if(args[0].equalsIgnoreCase("remove"))
         {
             String channelMessage = buildMessage(sender.getName(), args[1], false);
-            deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_WHITELIST, channelMessage);
+
+            DeltaRedisApi.instance().publish(
+                Servers.BUNGEECORD,
+                DeltaBansChannels.RANGE_WHITELIST,
+                channelMessage);
         }
         else
         {

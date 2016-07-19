@@ -48,14 +48,12 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
 {
     private BanStorage banStorage;
     private WarningStorage warningStorage;
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public GeneralListener(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public GeneralListener(DeltaBans plugin)
     {
         this.banStorage = plugin.getBanStorage();
         this.warningStorage = plugin.getWarningStorage();
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -77,7 +75,6 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
         unregister();
         banStorage = null;
         warningStorage = null;
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -97,6 +94,7 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
     @EventHandler
     public void onRedisMessage(DeltaRedisMessageEvent event)
     {
+        DeltaRedisApi api = DeltaRedisApi.instance();
         String channel = event.getChannel();
         byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
         ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
@@ -128,7 +126,7 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                 builder.append(banInfoString).append("\n").append(warningInfoString);
             }
 
-            deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender, builder.toString());
+            api.sendMessageToPlayer(event.getSendingServer(), sender, builder.toString());
         }
         else if(channel.equals(DeltaBansChannels.SAVE))
         {
@@ -136,12 +134,12 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
 
             if(plugin.saveAll())
             {
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                api.sendMessageToPlayer(event.getSendingServer(), sender,
                     Settings.format("SaveSuccess"));
             }
             else
             {
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                api.sendMessageToPlayer(event.getSendingServer(), sender,
                     Settings.format("SaveFailure"));
             }
         }
@@ -153,13 +151,13 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
             if(enable)
             {
                 Settings.setWhitelistEnabled(true);
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                api.sendMessageToPlayer(event.getSendingServer(), sender,
                     Settings.format("WhitelistToggle", "enabled"));
             }
             else
             {
                 Settings.setWhitelistEnabled(false);
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                api.sendMessageToPlayer(event.getSendingServer(), sender,
                     Settings.format("WhitelistToggle", "disabled"));
             }
         }
@@ -173,12 +171,12 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
             {
                 if(plugin.getWhitelist().add(name))
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                    api.sendMessageToPlayer(event.getSendingServer(), sender,
                         Settings.format("AddedToWhitelist", name));
                 }
                 else
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                    api.sendMessageToPlayer(event.getSendingServer(), sender,
                         Settings.format("AlreadyInWhitelist", name));
                 }
             }
@@ -186,12 +184,12 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
             {
                 if(plugin.getWhitelist().remove(name))
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                    api.sendMessageToPlayer(event.getSendingServer(), sender,
                         Settings.format("RemovedFromWhitelist", name));
                 }
                 else
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                    api.sendMessageToPlayer(event.getSendingServer(), sender,
                         Settings.format("NotInWhitelist", name));
                 }
             }

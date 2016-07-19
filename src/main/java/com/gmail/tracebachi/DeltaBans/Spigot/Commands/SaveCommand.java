@@ -32,12 +32,10 @@ import org.bukkit.command.CommandSender;
  */
 public class SaveCommand implements CommandExecutor, Registerable, Shutdownable
 {
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public SaveCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public SaveCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -57,7 +55,6 @@ public class SaveCommand implements CommandExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -70,7 +67,11 @@ public class SaveCommand implements CommandExecutor, Registerable, Shutdownable
             return true;
         }
 
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.SAVE, sender.getName());
+        DeltaRedisApi.instance().publish(
+            Servers.BUNGEECORD,
+            DeltaBansChannels.SAVE,
+            sender.getName());
+
         return true;
     }
 }

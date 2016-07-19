@@ -40,12 +40,10 @@ import java.util.List;
  */
 public class BanCommand implements TabExecutor, Registerable, Shutdownable
 {
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public BanCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public BanCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -67,7 +65,6 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -75,7 +72,7 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
     public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
     {
         String lastArg = args[args.length - 1];
-        return deltaRedisApi.matchStartOfPlayerName(lastArg);
+        return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
     }
 
     @Override
@@ -131,7 +128,11 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
 
         String channelMessage = buildMessage(banner, message, possibleIp, name, isSilent);
 
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.BAN, channelMessage);
+        DeltaRedisApi.instance().publish(
+            Servers.BUNGEECORD,
+            DeltaBansChannels.BAN,
+            channelMessage);
+
         return true;
     }
 
@@ -143,11 +144,15 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
         out.writeUTF(ip);
         out.writeUTF(Long.toHexString(0));
         out.writeBoolean(isSilent);
-        out.writeBoolean(name != null);
 
         if(name != null)
         {
+            out.writeBoolean(true);
             out.writeUTF(name);
+        }
+        else
+        {
+            out.writeBoolean(false);
         }
 
         return new String(out.toByteArray(), StandardCharsets.UTF_8);

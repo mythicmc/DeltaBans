@@ -56,15 +56,13 @@ public class BanListener implements Listener, Registerable, Shutdownable
     private BanStorage banStorage;
     private RangeBanStorage rangeBanStorage;
     private Set<String> rangeBanWhitelist;
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public BanListener(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public BanListener(DeltaBans plugin)
     {
         this.banStorage = plugin.getBanStorage();
         this.rangeBanStorage = plugin.getRangeBanStorage();
         this.rangeBanWhitelist = plugin.getRangeBanWhitelist();
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -87,7 +85,6 @@ public class BanListener implements Listener, Registerable, Shutdownable
         this.rangeBanWhitelist = null;
         this.banStorage = null;
         this.rangeBanStorage = null;
-        this.deltaRedisApi = null;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -163,6 +160,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
     @EventHandler
     public void onRedisMessage(DeltaRedisMessageEvent event)
     {
+        DeltaRedisApi api = DeltaRedisApi.instance();
         String channel = event.getChannel();
         byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
         ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
@@ -185,12 +183,12 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
             if(!hasName && isIpBanned)
             {
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), banner,
+                api.sendMessageToPlayer(event.getSendingServer(), banner,
                     Settings.format("AlreadyIpBanned", ip));
             }
             else if(hasName && isIpBanned && banStorage.isNameBanned(name))
             {
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), banner,
+                api.sendMessageToPlayer(event.getSendingServer(), banner,
                     Settings.format("AlreadyIpBanned", name));
             }
             else
@@ -223,7 +221,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
                 if(entries == null || entries.size() == 0)
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                    api.sendMessageToPlayer(event.getSendingServer(), sender,
                         Settings.format("BanNotFound", banee));
                 }
                 else
@@ -239,7 +237,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
                 if(entry == null)
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), sender,
+                    api.sendMessageToPlayer(event.getSendingServer(), sender,
                         Settings.format("BanNotFound", banee));
                 }
                 else
@@ -259,7 +257,7 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
             if(banStorage.isNameBanned(name))
             {
-                deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), banner,
+                api.sendMessageToPlayer(event.getSendingServer(), banner,
                     Settings.format("AlreadyIpBanned", name));
             }
             else
@@ -324,12 +322,12 @@ public class BanListener implements Listener, Registerable, Shutdownable
             {
                 if(rangeBanWhitelist.add(nameToUpdate.toLowerCase()))
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
+                    api.sendMessageToPlayer(event.getSendingServer(), senderName,
                         Settings.format("AddedToRangeBanWhitelist", nameToUpdate));
                 }
                 else
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
+                    api.sendMessageToPlayer(event.getSendingServer(), senderName,
                         Settings.format("AlreadyInRangeBanWhitelist", nameToUpdate));
                 }
             }
@@ -337,12 +335,12 @@ public class BanListener implements Listener, Registerable, Shutdownable
             {
                 if(rangeBanWhitelist.remove(nameToUpdate.toLowerCase()))
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
+                    api.sendMessageToPlayer(event.getSendingServer(), senderName,
                         Settings.format("RemovedFromRangeBanWhitelist", nameToUpdate));
                 }
                 else
                 {
-                    deltaRedisApi.sendMessageToPlayer(event.getSendingServer(), senderName,
+                    api.sendMessageToPlayer(event.getSendingServer(), senderName,
                         Settings.format("NotInRangeBanWhitelist", nameToUpdate));
                 }
             }
@@ -420,13 +418,15 @@ public class BanListener implements Listener, Registerable, Shutdownable
     {
         if(isSilent)
         {
-            deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+            DeltaRedisApi.instance().sendAnnouncementToServer(
+                Servers.SPIGOT,
                 Settings.format("SilentPrefix") + announcement,
                 "DeltaBans.SeeSilent");
         }
         else
         {
-            deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+            DeltaRedisApi.instance().sendAnnouncementToServer(
+                Servers.SPIGOT,
                 announcement,
                 "");
         }

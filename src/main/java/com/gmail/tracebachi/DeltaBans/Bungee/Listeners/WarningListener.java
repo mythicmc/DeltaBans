@@ -40,13 +40,11 @@ import java.nio.charset.StandardCharsets;
 public class WarningListener implements Listener, Registerable, Shutdownable
 {
     private WarningStorage warningStorage;
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public WarningListener(DeltaRedisApi deltaRedisApi, WarningStorage warningStorage, DeltaBans plugin)
+    public WarningListener(WarningStorage warningStorage, DeltaBans plugin)
     {
         this.warningStorage = warningStorage;
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -67,13 +65,13 @@ public class WarningListener implements Listener, Registerable, Shutdownable
     {
         unregister();
         warningStorage = null;
-        deltaRedisApi = null;
         plugin = null;
     }
 
     @EventHandler
     public void onRedisMessage(DeltaRedisMessageEvent event)
     {
+        DeltaRedisApi api = DeltaRedisApi.instance();
         String channel = event.getChannel();
         byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
         ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
@@ -92,20 +90,24 @@ public class WarningListener implements Listener, Registerable, Shutdownable
             out.writeUTF(message);
             out.writeUTF(Integer.toHexString(count));
 
-            deltaRedisApi.publish(event.getSendingServer(), DeltaBansChannels.WARN,
+            api.publish(
+                event.getSendingServer(),
+                DeltaBansChannels.WARN,
                 new String(out.toByteArray(), StandardCharsets.UTF_8));
 
             String announcement = Settings.format("WarnAnnouncement", warner, name, message);
 
             if(isSilent)
             {
-                deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+                api.sendAnnouncementToServer(
+                    Servers.SPIGOT,
                     Settings.format("SilentPrefix") + announcement,
                     "DeltaBans.SeeSilent");
             }
             else
             {
-                deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+                api.sendAnnouncementToServer(
+                    Servers.SPIGOT,
                     announcement,
                     "");
             }
@@ -124,13 +126,15 @@ public class WarningListener implements Listener, Registerable, Shutdownable
 
             if(isSilent)
             {
-                deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+                api.sendAnnouncementToServer(
+                    Servers.SPIGOT,
                     Settings.format("SilentPrefix") + announcement,
                     "DeltaBans.SeeSilent");
             }
             else
             {
-                deltaRedisApi.sendAnnouncementToServer(Servers.SPIGOT,
+                api.sendAnnouncementToServer(
+                    Servers.SPIGOT,
                     announcement,
                     "");
             }

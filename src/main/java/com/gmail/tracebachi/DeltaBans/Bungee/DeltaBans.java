@@ -21,8 +21,6 @@ import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.GeneralListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.WarningListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.*;
 import com.gmail.tracebachi.DeltaRedis.Bungee.ConfigUtil;
-import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedis;
-import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.google.gson.*;
 import io.netty.util.internal.ConcurrentSet;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -66,17 +64,13 @@ public class DeltaBans extends Plugin
         readRangeBanWhitelist();
         readWhitelist();
 
-        DeltaRedis deltaRedisPlugin = (DeltaRedis) getProxy()
-            .getPluginManager().getPlugin("DeltaRedis");
-        DeltaRedisApi deltaRedisApi = deltaRedisPlugin.getDeltaRedisApi();
-
-        banListener = new BanListener(deltaRedisApi, this);
+        banListener = new BanListener(this);
         banListener.register();
 
-        warningListener = new WarningListener(deltaRedisApi, warningStorage, this);
+        warningListener = new WarningListener(warningStorage, this);
         warningListener.register();
 
-        generalListener = new GeneralListener(deltaRedisApi, this);
+        generalListener = new GeneralListener(this);
         generalListener.register();
 
         getProxy().getScheduler().schedule(this,

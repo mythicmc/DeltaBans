@@ -1,10 +1,16 @@
 # DeltaBans Configuration File (Spigot)
 
 # DbShare Database name
-Database: Main
+Database:
 
-# Database table used by xAuth to save account information
-xAuth-AccountsTable: accounts
+  # DbShare Database name
+  Name: Main
+  # Accounts table name
+  Table: accounts
+  # Column in accounts table that stores last known IP
+  IpColumn: lastloginip
+  # Column in accounts table that stores player name
+  PlayerColumn: playername
 
 # Formatting
 Formats:

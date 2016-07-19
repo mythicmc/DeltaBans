@@ -1,3 +1,19 @@
+/*
+ * This file is part of DeltaBans.
+ *
+ * DeltaBans is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * DeltaBans is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.gmail.tracebachi.DeltaBans.Spigot;
 
 import com.gmail.tracebachi.DbShare.DbShare;
@@ -18,8 +34,10 @@ import java.util.Map;
 public class Settings
 {
     private static boolean debugEnabled;
-    private static String database;
-    private static String xAuthAccountsTable;
+    private static String databaseName;
+    private static String accountsTableName;
+    private static String ipColumnName;
+    private static String playerColumnName;
     private static Map<String, MessageFormat> formats = new HashMap<>();
     private static Map<Integer, List<String>> warningCommands = new HashMap<>();
 
@@ -31,9 +49,12 @@ public class Settings
 
         formats.clear();
         warningCommands.clear();
+
         debugEnabled = config.getBoolean("DebugMode", false);
-        database = config.getString("Database");
-        xAuthAccountsTable = config.getString("xAuth-AccountsTable");
+        databaseName = config.getString("Database.Name");
+        accountsTableName = config.getString("Database.Table");
+        ipColumnName = config.getString("Database.IpColumn");
+        playerColumnName = config.getString("Database.PlayerColumn");
 
         section = config.getConfigurationSection("Formats");
 
@@ -62,19 +83,16 @@ public class Settings
         return debugEnabled;
     }
 
-    public static void setDebugEnabled(boolean debugEnabled)
-    {
-        Settings.debugEnabled = debugEnabled;
-    }
-
     public static HikariDataSource getDataSource()
     {
-        return DbShare.getDataSource(database);
+        return DbShare.getDataSource(databaseName);
     }
 
-    public static String getIpCheckQuery()
+    public static String getIpLookupQuery()
     {
-        return "SELECT lastloginip FROM `" + xAuthAccountsTable + "` WHERE playername = ?;";
+        return "SELECT `" + ipColumnName +
+            "` FROM `" + accountsTableName +
+            "` WHERE `" + playerColumnName + "` = ?;";
     }
 
     public static String format(String key, String... args)

@@ -37,12 +37,10 @@ import java.nio.charset.StandardCharsets;
  */
 public class UnbanCommand implements CommandExecutor, Registerable, Shutdownable
 {
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public UnbanCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public UnbanCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -62,7 +60,6 @@ public class UnbanCommand implements CommandExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -99,7 +96,11 @@ public class UnbanCommand implements CommandExecutor, Registerable, Shutdownable
 
         String channelMessage = buildMessage(banner, banee, isIp, isSilent);
 
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.UNBAN, channelMessage);
+        DeltaRedisApi.instance().publish(
+            Servers.BUNGEECORD,
+            DeltaBansChannels.UNBAN,
+            channelMessage);
+
         return true;
     }
 

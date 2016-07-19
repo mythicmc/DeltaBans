@@ -51,12 +51,10 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
     private static final Pattern NAME_PATTERN = Pattern.compile("\\{name\\}");
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message\\}");
 
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public WarnCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public WarnCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -80,7 +78,6 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -88,7 +85,7 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
     public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
     {
         String lastArg = args[args.length - 1];
-        return deltaRedisApi.matchStartOfPlayerName(lastArg);
+        return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
     }
 
     @Override
@@ -131,7 +128,11 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
 
         String channelMessage = buildMessage(warner, name, message, isSilent);
 
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.WARN, channelMessage);
+        DeltaRedisApi.instance().publish(
+            Servers.BUNGEECORD,
+            DeltaBansChannels.WARN,
+            channelMessage);
+
         return true;
     }
 

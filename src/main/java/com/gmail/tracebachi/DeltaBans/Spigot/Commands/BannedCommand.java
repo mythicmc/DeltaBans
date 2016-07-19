@@ -38,12 +38,10 @@ import java.util.List;
  */
 public class BannedCommand implements TabExecutor, Registerable, Shutdownable
 {
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public BannedCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public BannedCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -65,7 +63,6 @@ public class BannedCommand implements TabExecutor, Registerable, Shutdownable
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -73,7 +70,7 @@ public class BannedCommand implements TabExecutor, Registerable, Shutdownable
     public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
     {
         String lastArg = args[args.length - 1];
-        return deltaRedisApi.matchStartOfPlayerName(lastArg);
+        return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
     }
 
     @Override
@@ -103,7 +100,11 @@ public class BannedCommand implements TabExecutor, Registerable, Shutdownable
         String senderName = sender.getName();
         String channelMessage = buildMessage(senderName, args[0], isIp, hasExtraPerm);
 
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.BANNED, channelMessage);
+        DeltaRedisApi.instance().publish(
+            Servers.BUNGEECORD,
+            DeltaBansChannels.BANNED,
+            channelMessage);
+
         return true;
     }
 

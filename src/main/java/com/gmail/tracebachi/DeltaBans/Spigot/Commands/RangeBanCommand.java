@@ -42,12 +42,10 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
 {
     private static final Pattern DASH_PATTERN = Pattern.compile("-");
 
-    private DeltaRedisApi deltaRedisApi;
     private DeltaBans plugin;
 
-    public RangeBanCommand(DeltaRedisApi deltaRedisApi, DeltaBans plugin)
+    public RangeBanCommand(DeltaBans plugin)
     {
-        this.deltaRedisApi = deltaRedisApi;
         this.plugin = plugin;
     }
 
@@ -67,7 +65,6 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
     public void shutdown()
     {
         unregister();
-        deltaRedisApi = null;
         plugin = null;
     }
 
@@ -151,7 +148,11 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
                 isSilent);
         }
 
-        deltaRedisApi.publish(Servers.BUNGEECORD, DeltaBansChannels.RANGE_BAN, channelMessage);
+        DeltaRedisApi.instance().publish(
+            Servers.BUNGEECORD,
+            DeltaBansChannels.RANGE_BAN,
+            channelMessage);
+
         return true;
     }
 

@@ -1,8 +1,8 @@
 name: DeltaBans
 main: com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans
-version: 1.6
+version: 1.7
 author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
-depend: [DeltaRedis, xAuth]
+depend: [DeltaRedis, DbShare]
 commands:
   ban:
     description: Allows the user to ban others and their IP.

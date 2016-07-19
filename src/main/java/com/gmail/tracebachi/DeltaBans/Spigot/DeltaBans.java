@@ -17,8 +17,6 @@
 package com.gmail.tracebachi.DeltaBans.Spigot;
 
 import com.gmail.tracebachi.DeltaBans.Spigot.Commands.*;
-import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedis;
-import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.*;
@@ -54,57 +52,43 @@ public class DeltaBans extends JavaPlugin
         reloadConfig();
         Settings.read(getConfig());
 
-        DeltaRedis plugin = (DeltaRedis) getServer().getPluginManager().getPlugin("DeltaRedis");
-        DeltaRedisApi deltaRedisApi = plugin.getDeltaRedisApi();
-
-        try
-        {
-            testConnection();
-        }
-        catch(SQLException e)
-        {
-            e.printStackTrace();
-            severe("Failed to connect to database containing xAuth account table. Shutting down ...");
-            return;
-        }
-
-        banCommand = new BanCommand(deltaRedisApi, this);
+        banCommand = new BanCommand(this);
         banCommand.register();
 
-        bannedCommand = new BannedCommand(deltaRedisApi, this);
+        bannedCommand = new BannedCommand(this);
         bannedCommand.register();
 
-        kickCommand = new KickCommand(deltaRedisApi, this);
+        kickCommand = new KickCommand(this);
         kickCommand.register();
 
-        nameBanCommand = new NameBanCommand(deltaRedisApi, this);
+        nameBanCommand = new NameBanCommand(this);
         nameBanCommand.register();
 
-        rangeBanCommand = new RangeBanCommand(deltaRedisApi, this);
+        rangeBanCommand = new RangeBanCommand(this);
         rangeBanCommand.register();
 
-        rangeUnbanCommand = new RangeUnbanCommand(deltaRedisApi, this);
+        rangeUnbanCommand = new RangeUnbanCommand(this);
         rangeUnbanCommand.register();
 
-        rangeWhitelistCommand = new RangeWhitelistCommand(deltaRedisApi, this);
+        rangeWhitelistCommand = new RangeWhitelistCommand(this);
         rangeWhitelistCommand.register();
 
-        saveCommand = new SaveCommand(deltaRedisApi, this);
+        saveCommand = new SaveCommand(this);
         saveCommand.register();
 
-        tempBanCommand = new TempBanCommand(deltaRedisApi, this);
+        tempBanCommand = new TempBanCommand(this);
         tempBanCommand.register();
 
-        unbanCommand = new UnbanCommand(deltaRedisApi, this);
+        unbanCommand = new UnbanCommand(this);
         unbanCommand.register();
 
-        unwarnCommand = new UnwarnCommand(deltaRedisApi, this);
+        unwarnCommand = new UnwarnCommand(this);
         unwarnCommand.register();
 
-        warnCommand = new WarnCommand(deltaRedisApi, this);
+        warnCommand = new WarnCommand(this);
         warnCommand.register();
 
-        whitelistCommand = new WhitelistCommand(deltaRedisApi, this);
+        whitelistCommand = new WhitelistCommand(this);
         whitelistCommand.register();
     }
 
@@ -155,7 +139,7 @@ public class DeltaBans extends JavaPlugin
     {
         try(Connection connection = Settings.getDataSource().getConnection())
         {
-            try(PreparedStatement statement = connection.prepareStatement(Settings.getIpCheckQuery()))
+            try(PreparedStatement statement = connection.prepareStatement(Settings.getIpLookupQuery()))
             {
                 statement.setString(1, playerName);
 
