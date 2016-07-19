@@ -182,6 +182,11 @@ public class DeltaBans extends Plugin
         return result;
     }
 
+    public void info(String message)
+    {
+        getLogger().info(message);
+    }
+
     private boolean saveBans(Gson gson)
     {
         JsonArray banArray = banStorage.toJson();

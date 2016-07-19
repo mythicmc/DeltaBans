@@ -101,6 +101,13 @@ public class BanListener implements Listener, Registerable, Shutdownable
             {
                 event.setCancelReason(getKickMessage(rangeBanEntry));
                 event.setCancelled(true);
+
+                logDeniedLoginAttempt(
+                    playerName,
+                    address,
+                    rangeBanEntry.getMessage(),
+                    rangeBanEntry.getBanner());
+
                 return;
             }
         }
@@ -117,6 +124,13 @@ public class BanListener implements Listener, Registerable, Shutdownable
             {
                 event.setCancelReason(getKickMessage(nameEntry));
                 event.setCancelled(true);
+
+                logDeniedLoginAttempt(
+                    playerName,
+                    address,
+                    nameEntry.getMessage(),
+                    nameEntry.getBanner());
+
                 return;
             }
         }
@@ -148,11 +162,23 @@ public class BanListener implements Listener, Registerable, Shutdownable
             {
                 event.setCancelReason(getKickMessage(ipBanEntry));
                 event.setCancelled(true);
+
+                logDeniedLoginAttempt(
+                    playerName,
+                    address,
+                    ipBanEntry.getMessage(),
+                    ipBanEntry.getBanner());
             }
             else
             {
                 event.setCancelReason(getKickMessage(entryWithDuration));
                 event.setCancelled(true);
+
+                logDeniedLoginAttempt(
+                    playerName,
+                    address,
+                    entryWithDuration.getMessage(),
+                    entryWithDuration.getBanner());
             }
         }
     }
@@ -463,5 +489,10 @@ public class BanListener implements Listener, Registerable, Shutdownable
             entry.getBanner());
 
         return ChatColor.translateAlternateColorCodes('&', result);
+    }
+
+    private void logDeniedLoginAttempt(String name, String ip, String reason, String banner)
+    {
+        plugin.info("[LoginAttempt] " + name + " @ " + ip + " for \"" + reason + "\" by " + banner);
     }
 }
