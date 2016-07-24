@@ -148,7 +148,7 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
             String message = in.readUTF();
             Integer amount = Integer.parseInt(in.readUTF(), 16);
 
-            Player player = Bukkit.getPlayer(senderName);
+            Player player = Bukkit.getPlayerExact(senderName);
 
             if(player != null && player.isOnline())
             {

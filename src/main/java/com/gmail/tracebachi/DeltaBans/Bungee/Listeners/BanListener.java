@@ -144,9 +144,16 @@ public class BanListener implements Listener, Registerable, Shutdownable
 
             for(BanEntry entry : ipBanEntries)
             {
-                if(entry.hasDuration() && !entry.isDurationComplete())
+                if(entry.hasDuration())
                 {
-                    entryWithDuration = entry;
+                    if(entry.isDurationComplete())
+                    {
+                        banStorage.removeExactBanEntry(entry);
+                    }
+                    else
+                    {
+                        entryWithDuration = entry;
+                    }
                 }
                 else
                 {
@@ -154,9 +161,16 @@ public class BanListener implements Listener, Registerable, Shutdownable
                 }
             }
 
-            if(ipBanEntry == null && entryWithDuration == null)
+            if(entryWithDuration != null)
             {
-                banStorage.removeUsingIp(address);
+                event.setCancelReason(getKickMessage(entryWithDuration));
+                event.setCancelled(true);
+
+                logDeniedLoginAttempt(
+                    playerName,
+                    address,
+                    entryWithDuration.getMessage(),
+                    entryWithDuration.getBanner());
             }
             else if(ipBanEntry != null)
             {
@@ -168,17 +182,6 @@ public class BanListener implements Listener, Registerable, Shutdownable
                     address,
                     ipBanEntry.getMessage(),
                     ipBanEntry.getBanner());
-            }
-            else
-            {
-                event.setCancelReason(getKickMessage(entryWithDuration));
-                event.setCancelled(true);
-
-                logDeniedLoginAttempt(
-                    playerName,
-                    address,
-                    entryWithDuration.getMessage(),
-                    entryWithDuration.getBanner());
             }
         }
     }

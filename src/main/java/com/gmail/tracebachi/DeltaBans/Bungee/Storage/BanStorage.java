@@ -35,7 +35,7 @@ public class BanStorage
 
     public synchronized void add(BanEntry ban)
     {
-        Preconditions.checkNotNull(ban, "Ban cannot be null.");
+        Preconditions.checkNotNull(ban, "Ban was null.");
 
         // Add to the main ban set
         banSet.add(ban);
@@ -61,7 +61,7 @@ public class BanStorage
         }
     }
 
-    public synchronized void remove(BanEntry ban)
+    public synchronized void removeExactBanEntry(BanEntry ban)
     {
         Preconditions.checkNotNull(ban, "Ban cannot be null.");
 
@@ -95,7 +95,7 @@ public class BanStorage
 
     public synchronized Set<BanEntry> removeUsingIp(String ip)
     {
-        Preconditions.checkNotNull(ip, "IP cannot be null.");
+        Preconditions.checkNotNull(ip, "IP was null.");
 
         // Remove from the IP map
         Set<BanEntry> entriesToRemove = ipMap.remove(ip);
@@ -122,7 +122,7 @@ public class BanStorage
 
     public synchronized BanEntry removeUsingName(String name)
     {
-        Preconditions.checkNotNull(name, "Name cannot be null.");
+        Preconditions.checkNotNull(name, "Name was null.");
 
         // Remove from the name map
         name = name.toLowerCase();

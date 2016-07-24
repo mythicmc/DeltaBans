@@ -152,7 +152,7 @@ public class KickCommand implements TabExecutor, Listener, Registerable, Shutdow
             String nameToKick = split[1];
             String message = split[2];
             boolean isSilent = split[3].equals("1");
-            Player toKick = Bukkit.getPlayer(nameToKick);
+            Player toKick = Bukkit.getPlayerExact(nameToKick);
 
             if(toKick != null)
             {
@@ -190,7 +190,7 @@ public class KickCommand implements TabExecutor, Listener, Registerable, Shutdow
         }
         else
         {
-            Player player = Bukkit.getPlayer(senderName);
+            Player player = Bukkit.getPlayerExact(senderName);
 
             if(player != null)
             {
