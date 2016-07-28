@@ -3,3 +3,4 @@ main: com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans
 version: 1.7
 author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
 depends: [DeltaRedis]
+softdepends: [BungeeLogger]

@@ -19,9 +19,13 @@ package com.gmail.tracebachi.DeltaBans.Bungee;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.BanListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.GeneralListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.WarningListener;
+import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.BungeeLogger;
+import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.DefaultLogger;
+import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.DeltaBansLogger;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.*;
 import com.gmail.tracebachi.DeltaRedis.Bungee.ConfigUtil;
 import com.google.gson.*;
+import io.github.kyzderp.bungeelogger.BungeeLoggerPlugin;
 import io.netty.util.internal.ConcurrentSet;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
@@ -44,6 +48,7 @@ public class DeltaBans extends Plugin
     private WarningStorage warningStorage;
     private WarningListener warningListener;
     private RangeBanStorage rangeBanStorage;
+    private DeltaBansLogger logger;
     private final Set<String> rangeBanWhitelist = new ConcurrentSet<>();
     private final Set<String> whitelist = new ConcurrentSet<>();
     private final Object saveLock = new Object();
@@ -84,6 +89,20 @@ public class DeltaBans extends Plugin
             Settings.getMinutesPerWarningCleanup(),
             Settings.getMinutesPerWarningCleanup(),
             TimeUnit.MINUTES);
+
+        Plugin foundPlugin = getProxy().getPluginManager().getPlugin("BungeeLogger");
+
+        if(foundPlugin != null)
+        {
+            BungeeLoggerPlugin bungeeLoggerPlugin = (BungeeLoggerPlugin) foundPlugin;
+
+            logger = new BungeeLogger(
+                bungeeLoggerPlugin.createLogger(this));
+        }
+        else
+        {
+            logger = new DefaultLogger(getLogger());
+        }
     }
 
     @Override
@@ -184,7 +203,7 @@ public class DeltaBans extends Plugin
 
     public void info(String message)
     {
-        getLogger().info(message);
+        logger.info(message);
     }
 
     private boolean saveBans(Gson gson)
