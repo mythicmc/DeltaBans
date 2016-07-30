@@ -1,6 +1,6 @@
 name: DeltaBans
 main: com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans
-version: 1.7
+version: ${project.version}
 author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
 depend: [DeltaRedis, DbShare]
 commands:

@@ -16,7 +16,7 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot;
 
-import com.gmail.tracebachi.DbShare.DbShare;
+import com.gmail.tracebachi.DbShare.Spigot.DbShare;
 import com.zaxxer.hikari.HikariDataSource;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
