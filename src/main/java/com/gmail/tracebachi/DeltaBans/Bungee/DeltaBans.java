@@ -19,22 +19,29 @@ package com.gmail.tracebachi.DeltaBans.Bungee;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.BanListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.GeneralListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.WarningListener;
-import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.BungeeLogger;
-import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.DefaultLogger;
+import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.BungeeLoggerLogger;
 import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.DeltaBansLogger;
-import com.gmail.tracebachi.DeltaBans.Bungee.Storage.*;
+import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.JavaLoggingLogger;
+import com.gmail.tracebachi.DeltaBans.Bungee.Storage.BanStorage;
+import com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL.MySQLBanStorage;
+import com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL.MySQLRangeBanStorage;
+import com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL.MySQLWarningStorage;
+import com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL.MySQLWhitelistStorage;
+import com.gmail.tracebachi.DeltaBans.Bungee.Storage.RangeBanStorage;
+import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningStorage;
+import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WhitelistStorage;
 import com.gmail.tracebachi.DeltaRedis.Bungee.ConfigUtil;
-import com.google.gson.*;
 import io.github.kyzderp.bungeelogger.BungeeLoggerPlugin;
-import io.netty.util.internal.ConcurrentSet;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
 
-import java.io.*;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.io.File;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -42,32 +49,84 @@ import java.util.concurrent.TimeUnit;
 public class DeltaBans extends Plugin
 {
     private Configuration config;
-    private GeneralListener generalListener;
-    private BanStorage banStorage;
-    private BanListener banListener;
-    private WarningStorage warningStorage;
-    private WarningListener warningListener;
-    private RangeBanStorage rangeBanStorage;
     private DeltaBansLogger logger;
-    private final Set<String> rangeBanWhitelist = new ConcurrentSet<>();
-    private final Set<String> whitelist = new ConcurrentSet<>();
-    private final Object saveLock = new Object();
+
+    private GeneralListener generalListener;
+    private BanListener banListener;
+    private WarningListener warningListener;
+    private WhitelistStorage whitelistStorage;
+
+    private BanStorage banStorage;
+    private WarningStorage warningStorage;
+    private RangeBanStorage rangeBanStorage;
 
     @Override
     public void onEnable()
     {
         reloadConfig();
-        if(config == null) return;
+        if(config == null) { return; }
+
         Settings.read(config);
 
-        banStorage = new BanStorage();
-        readBans();
-        warningStorage = new WarningStorage();
-        readWarnings();
-        rangeBanStorage = new RangeBanStorage();
-        readRangeBans();
-        readRangeBanWhitelist();
-        readWhitelist();
+        setupLogger();
+
+        if(!createDatabaseTables())
+        {
+            severe("Failed to setup database tables. DeltaBans will not function.");
+            return;
+        }
+        else
+        {
+            debug("Database table setup complete.");
+        }
+
+        try
+        {
+            banStorage = new MySQLBanStorage(this);
+            banStorage.load();
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+            severe("Failed to load BanStorage. DeltaBans will not function.");
+            return;
+        }
+
+        try
+        {
+            warningStorage = new MySQLWarningStorage(this);
+            warningStorage.load();
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+            severe("Failed to load WarningStorage. DeltaBans will not function.");
+            return;
+        }
+
+        try
+        {
+            rangeBanStorage = new MySQLRangeBanStorage(this);
+            rangeBanStorage.load();
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+            severe("Failed to load RangeBanStorage. DeltaBans will not function.");
+            return;
+        }
+
+        try
+        {
+            whitelistStorage = new MySQLWhitelistStorage(this);
+            whitelistStorage.load();
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+            severe("Failed to load WhitelistStorage. DeltaBans will not function.");
+            return;
+        }
 
         banListener = new BanListener(this);
         banListener.register();
@@ -77,32 +136,6 @@ public class DeltaBans extends Plugin
 
         generalListener = new GeneralListener(this);
         generalListener.register();
-
-        getProxy().getScheduler().schedule(this,
-            this::saveAll,
-            Settings.getMinutesPerBanSave(),
-            Settings.getMinutesPerBanSave(),
-            TimeUnit.MINUTES);
-
-        getProxy().getScheduler().schedule(this,
-            () -> warningStorage.cleanupWarnings(Settings.getWarningDuration()),
-            Settings.getMinutesPerWarningCleanup(),
-            Settings.getMinutesPerWarningCleanup(),
-            TimeUnit.MINUTES);
-
-        Plugin foundPlugin = getProxy().getPluginManager().getPlugin("BungeeLogger");
-
-        if(foundPlugin != null)
-        {
-            BungeeLoggerPlugin bungeeLoggerPlugin = (BungeeLoggerPlugin) foundPlugin;
-
-            logger = new BungeeLogger(
-                bungeeLoggerPlugin.createLogger(this));
-        }
-        else
-        {
-            logger = new DefaultLogger(getLogger());
-        }
     }
 
     @Override
@@ -110,27 +143,22 @@ public class DeltaBans extends Plugin
     {
         getProxy().getScheduler().cancel(this);
 
-        generalListener.shutdown();
-        generalListener = null;
-
-        warningListener.shutdown();
-        warningListener = null;
-
-        banListener.shutdown();
-        banListener = null;
-
-        if(banStorage != null && warningStorage != null && rangeBanStorage != null)
+        if(generalListener != null)
         {
-            saveAll();
-            banStorage = null;
-            warningStorage = null;
-            rangeBanStorage = null;
-            rangeBanWhitelist.clear();
+            generalListener.shutdown();
+            generalListener = null;
         }
-        else
+
+        if(warningListener != null)
         {
-            getLogger().severe("Failed to save ban files on shutdown! " +
-                "One of the storages was not initialized correctly.");
+            warningListener.shutdown();
+            warningListener = null;
+        }
+
+        if(banListener != null)
+        {
+            banListener.shutdown();
+            banListener = null;
         }
     }
 
@@ -144,27 +172,32 @@ public class DeltaBans extends Plugin
         return rangeBanStorage;
     }
 
-    public Set<String> getRangeBanWhitelist()
-    {
-        return rangeBanWhitelist;
-    }
-
-    public Set<String> getWhitelist()
-    {
-        return whitelist;
-    }
-
     public WarningStorage getWarningStorage()
     {
         return warningStorage;
     }
 
-    public Configuration getConfig()
+    public WhitelistStorage getWhitelistStorage()
     {
-        return config;
+        return whitelistStorage;
     }
 
-    public void reloadConfig()
+    public void info(String message)
+    {
+        logger.info(message);
+    }
+
+    public void severe(String message)
+    {
+        logger.severe(message);
+    }
+
+    public void debug(String message)
+    {
+        if(Settings.isDebugEnabled()) { logger.debug(message); }
+    }
+
+    private void reloadConfig()
     {
         try
         {
@@ -174,7 +207,8 @@ public class DeltaBans extends Plugin
             if(config == null)
             {
                 ConfigUtil.saveResource(this, "bungee-config.yml", "config-example.yml", true);
-                getLogger().severe("Invalid configuration file! An example configuration has been saved to the DeltaBans folder.");
+                getLogger().severe("Invalid configuration file! " +
+                    "An example configuration has been saved to the DeltaBans folder.");
             }
         }
         catch(IOException e)
@@ -184,284 +218,86 @@ public class DeltaBans extends Plugin
         }
     }
 
-    public boolean saveAll()
+    private void setupLogger()
     {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        boolean result;
+        Plugin foundPlugin = getProxy().getPluginManager().getPlugin("BungeeLogger");
 
-        getLogger().info("Saving bans ...");
-        result = saveBans(gson);
-
-        getLogger().info("Saving warnings ...");
-        result &= saveWarnings(gson);
-
-        getLogger().info("Saving whitelists ...");
-        result &= saveWhitelists(gson);
-
-        return result;
-    }
-
-    public void info(String message)
-    {
-        logger.info(message);
-    }
-
-    private boolean saveBans(Gson gson)
-    {
-        JsonArray banArray = banStorage.toJson();
-        JsonArray rangeBanArray = rangeBanStorage.toJson();
-        File banFile = new File(getDataFolder(), "bans.json");
-        File rangeBanFile = new File(getDataFolder(), "rangebans.json");
-
-        synchronized(saveLock)
+        if(foundPlugin != null)
         {
-            try(BufferedWriter writer = new BufferedWriter(new FileWriter(banFile)))
-            {
-                gson.toJson(banArray, writer);
-                getLogger().info("Done saving bans.");
-            }
-            catch(IOException e)
-            {
-                e.printStackTrace();
-                return false;
-            }
+            BungeeLoggerPlugin bungeeLoggerPlugin = (BungeeLoggerPlugin) foundPlugin;
 
-            try(BufferedWriter writer = new BufferedWriter(new FileWriter(rangeBanFile)))
-            {
-                gson.toJson(rangeBanArray, writer);
-                getLogger().info("Done saving range bans.");
-            }
-            catch(IOException e)
-            {
-                e.printStackTrace();
-                return false;
-            }
+            logger = new BungeeLoggerLogger(
+                bungeeLoggerPlugin.createLogger(this));
+        }
+        else
+        {
+            logger = new JavaLoggingLogger(getLogger());
+        }
+    }
 
+    private boolean createDatabaseTables()
+    {
+        String createBanTable =
+            " CREATE TABLE IF NOT EXISTS deltabans_bans (" +
+            " `id`        INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY," +
+            " `name`      VARCHAR(32)," +
+            " `ip`        VARCHAR(40)," +
+            " `banner`    VARCHAR(32) NOT NULL," +
+            " `message`   VARCHAR(255) NOT NULL," +
+            " `duration`  BIGINT," +
+            " `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+            " INDEX (`name`)," +
+            " INDEX (`ip`));";
+        String createWarningTable =
+            " CREATE TABLE IF NOT EXISTS deltabans_warnings (" +
+            " `id`        INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY," +
+            " `name`      VARCHAR(32) NOT NULL," +
+            " `warner`    VARCHAR(32) NOT NULL," +
+            " `message`   VARCHAR(255) NOT NULL," +
+            " `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+            " INDEX (`name`));";
+        String createRangeBanTable =
+            " CREATE TABLE IF NOT EXISTS deltabans_rangebans (" +
+            " `id`        INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY," +
+            " `ip_start`  VARCHAR(40) NOT NULL," +
+            " `ip_end`    VARCHAR(40) NOT NULL," +
+            " `banner`    VARCHAR(32) NOT NULL," +
+            " `message`   VARCHAR(255) NOT NULL," +
+            " `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+            " INDEX (`ip_start`, `ip_end`));";
+        String createWhitelistTable =
+            " CREATE TABLE IF NOT EXISTS deltabans_whitelist (" +
+            " `name` VARCHAR(32) NOT NULL PRIMARY KEY," +
+            " `type` INT UNSIGNED NOT NULL DEFAULT 0);";
+
+        try(Connection connection = Settings.getDataSource().getConnection())
+        {
+            if(!createDatabaseTable(createBanTable, connection)) { return false; }
+            if(!createDatabaseTable(createWarningTable, connection)) { return false; }
+            if(!createDatabaseTable(createRangeBanTable, connection)) { return false; }
+            if(!createDatabaseTable(createWhitelistTable, connection)) { return false; }
+        }
+        catch(SQLException e)
+        {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean createDatabaseTable(String query, Connection connection) throws SQLException
+    {
+        try(Statement statement = connection.createStatement())
+        {
+            statement.execute(query);
             return true;
         }
-    }
-
-    private boolean saveWarnings(Gson gson)
-    {
-        JsonArray warningArray = warningStorage.toJson();
-        File warningFile = new File(getDataFolder(), "warnings.json");
-
-        synchronized(saveLock)
+        catch(SQLException ex)
         {
-            try(BufferedWriter writer = new BufferedWriter(new FileWriter(warningFile)))
-            {
-                gson.toJson(warningArray, writer);
-                getLogger().info("Done saving warnings.");
-            }
-            catch(IOException e)
-            {
-                e.printStackTrace();
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    private boolean saveWhitelists(Gson gson)
-    {
-        JsonArray whitelistArray = new JsonArray();
-        JsonArray rangeBanWhitelistArray = new JsonArray();
-        File whitelistFile = new File(getDataFolder(), "whitelist.json");
-        File rangeBanWhitelistFile = new File(getDataFolder(), "rangeban-whitelist.json");
-
-        synchronized(whitelist)
-        {
-            for(String name : whitelist)
-            {
-                whitelistArray.add(new JsonPrimitive(name));
-            }
-        }
-
-        synchronized(rangeBanWhitelist)
-        {
-            for(String name : rangeBanWhitelist)
-            {
-                rangeBanWhitelistArray.add(new JsonPrimitive(name));
-            }
-        }
-
-        synchronized(saveLock)
-        {
-            try(BufferedWriter writer = new BufferedWriter(new FileWriter(whitelistFile)))
-            {
-                gson.toJson(whitelistArray, writer);
-                getLogger().info("Done saving whitelist.");
-            }
-            catch(IOException e)
-            {
-                e.printStackTrace();
-                return false;
-            }
-
-            try(BufferedWriter writer = new BufferedWriter(new FileWriter(rangeBanWhitelistFile)))
-            {
-                gson.toJson(rangeBanWhitelistArray, writer);
-                getLogger().info("Done saving range ban whitelist.");
-            }
-            catch(IOException e)
-            {
-                e.printStackTrace();
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    private void readBans()
-    {
-        File file = new File(getDataFolder(), "bans.json");
-
-        if(!file.exists()) { return; }
-
-        JsonParser parser = new JsonParser();
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
-        {
-            JsonArray array = parser.parse(reader).getAsJsonArray();
-
-            for(JsonElement element : array)
-            {
-                try
-                {
-                    BanEntry entry = BanEntry.fromJson(element.getAsJsonObject());
-                    banStorage.add(entry);
-                }
-                catch(NullPointerException | IllegalArgumentException ex)
-                {
-                    ex.printStackTrace();
-                }
-            }
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    private void readWarnings()
-    {
-        File file = new File(getDataFolder(), "warnings.json");
-
-        if(!file.exists()) { return; }
-
-        JsonParser parser = new JsonParser();
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
-        {
-            JsonArray array = parser.parse(reader).getAsJsonArray();
-
-            for(JsonElement element : array)
-            {
-                try
-                {
-                    JsonObject object = element.getAsJsonObject();
-                    String name = object.get("name").getAsString();
-
-                    for(JsonElement warning : object.get("warnings").getAsJsonArray())
-                    {
-                        JsonObject warningObject = warning.getAsJsonObject();
-                        warningStorage.add(name, WarningEntry.fromJson(warningObject));
-                    }
-                }
-                catch(NullPointerException | IllegalArgumentException ex)
-                {
-                    ex.printStackTrace();
-                }
-            }
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    private void readRangeBans()
-    {
-        File file = new File(getDataFolder(), "rangebans.json");
-
-        if(!file.exists()) { return; }
-
-        JsonParser parser = new JsonParser();
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
-        {
-            JsonArray array = parser.parse(reader).getAsJsonArray();
-
-            for(JsonElement element : array)
-            {
-                try
-                {
-                    RangeBanEntry entry = RangeBanEntry.fromJson(element.getAsJsonObject());
-                    rangeBanStorage.add(entry);
-                }
-                catch(NullPointerException | IllegalArgumentException ex)
-                {
-                    ex.printStackTrace();
-                }
-            }
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    private void readRangeBanWhitelist()
-    {
-        File file = new File(getDataFolder(), "rangeban-whitelist.json");
-
-        if(!file.exists()) { return; }
-
-        JsonParser parser = new JsonParser();
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
-        {
-            JsonArray array = parser.parse(reader).getAsJsonArray();
-
-            rangeBanWhitelist.clear();
-
-            for(JsonElement element : array)
-            {
-                String name = element.getAsString();
-                rangeBanWhitelist.add(name.toLowerCase());
-            }
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    private void readWhitelist()
-    {
-        File file = new File(getDataFolder(), "whitelist.json");
-
-        if(!file.exists()) { return; }
-
-        JsonParser parser = new JsonParser();
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
-        {
-            JsonArray array = parser.parse(reader).getAsJsonArray();
-
-            whitelist.clear();
-
-            for(JsonElement element : array)
-            {
-                String name = element.getAsString();
-                whitelist.add(name);
-            }
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
+            severe("Failed to execute query:\n" + query);
+            ex.printStackTrace();
+            return false;
         }
     }
 }

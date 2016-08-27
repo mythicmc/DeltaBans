@@ -16,23 +16,24 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.Entries.RangeBanEntry;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 8/27/16.
  */
-public interface RangeBanStorage extends Loadable, Shutdownable
+public interface WhitelistStorage extends Loadable, Shutdownable
 {
-    void add(RangeBanEntry banEntry);
+    int getWhitelistSize();
 
-    RangeBanEntry getIpRangeBan(String ip);
+    boolean isOnNormalWhitelist(String name);
 
-    RangeBanEntry getIpRangeBan(long ipAsLong);
+    boolean removeFromNormalWhitelist(String name);
 
-    int removeIpRangeBan(String ip);
+    boolean addToNormalWhitelist(String name);
 
-    int removeIpRangeBan(long ipAsLong);
+    boolean isOnRangeBanWhitelist(String name);
 
-    int getTotalRangeBanCount();
+    boolean removeFromRangeBanWhitelist(String name);
+
+    boolean addToRangeBanWhitelist(String name);
 }

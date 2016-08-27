@@ -23,13 +23,10 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -66,7 +63,8 @@ public class WhitelistCommand implements TabExecutor, Registerable, Shutdownable
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args)
+    public List<String> onTabComplete(CommandSender commandSender, Command command,
+                                      String s, String[] args)
     {
         String lastArg = args[args.length - 1];
         return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
@@ -91,23 +89,37 @@ public class WhitelistCommand implements TabExecutor, Registerable, Shutdownable
 
         if(args[0].equalsIgnoreCase("on"))
         {
-            String channelMessage = buildToggleWhitelistMessage(sender.getName(), true);
-            api.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_TOGGLE, channelMessage);
+            api.publish(
+                Servers.BUNGEECORD,
+                DeltaBansChannels.WHITELIST_TOGGLE,
+                sender.getName(),
+                "1");
         }
         else if(args[0].equalsIgnoreCase("off"))
         {
-            String channelMessage = buildToggleWhitelistMessage(sender.getName(), false);
-            api.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_TOGGLE, channelMessage);
+            api.publish(
+                Servers.BUNGEECORD,
+                DeltaBansChannels.WHITELIST_TOGGLE,
+                sender.getName(),
+                "0");
         }
         else if(args.length > 1 && args[0].equalsIgnoreCase("add"))
         {
-            String channelMessage = buildEditWhitelistMessage(sender.getName(), true, args[1]);
-            api.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_EDIT, channelMessage);
+            api.publish(
+                Servers.BUNGEECORD,
+                DeltaBansChannels.WHITELIST_EDIT,
+                sender.getName(),
+                "1",
+                args[1]);
         }
         else if(args.length > 1 && args[0].equalsIgnoreCase("remove"))
         {
-            String channelMessage = buildEditWhitelistMessage(sender.getName(), false, args[1]);
-            api.publish(Servers.BUNGEECORD, DeltaBansChannels.WHITELIST_EDIT, channelMessage);
+            api.publish(
+                Servers.BUNGEECORD,
+                DeltaBansChannels.WHITELIST_EDIT,
+                sender.getName(),
+                "0",
+                args[1]);
         }
         else
         {
@@ -115,22 +127,5 @@ public class WhitelistCommand implements TabExecutor, Registerable, Shutdownable
         }
 
         return true;
-    }
-
-    private String buildToggleWhitelistMessage(String senderName, boolean enable)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(senderName);
-        out.writeBoolean(enable);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
-    }
-
-    private String buildEditWhitelistMessage(String senderName, boolean add, String nameToUpdate)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(senderName);
-        out.writeBoolean(add);
-        out.writeUTF(nameToUpdate);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

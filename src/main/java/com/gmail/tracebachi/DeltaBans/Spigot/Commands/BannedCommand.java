@@ -24,13 +24,10 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -67,7 +64,8 @@ public class BannedCommand implements TabExecutor, Registerable, Shutdownable
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    public List<String> onTabComplete(CommandSender sender, Command command, String s,
+                                      String[] args)
     {
         String lastArg = args[args.length - 1];
         return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
@@ -97,24 +95,13 @@ public class BannedCommand implements TabExecutor, Registerable, Shutdownable
             return true;
         }
 
-        String senderName = sender.getName();
-        String channelMessage = buildMessage(senderName, args[0], isIp, hasExtraPerm);
-
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.BANNED,
-            channelMessage);
-
+            sender.getName(),
+            args[0],
+            isIp ? "1" : "0",
+            hasExtraPerm ? "1" : "0");
         return true;
-    }
-
-    private String buildMessage(String banner, String argument, boolean isIp, boolean hasExtra)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(banner);
-        out.writeUTF(argument);
-        out.writeBoolean(isIp);
-        out.writeBoolean(hasExtra);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

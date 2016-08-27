@@ -14,25 +14,37 @@
  * You should have received a copy of the GNU General Public License
  * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
+package com.gmail.tracebachi.DeltaBans.Bungee.Loggers;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.Entries.RangeBanEntry;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
+import io.github.kyzderp.bungeelogger.BungeeLog;
 
 /**
- * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 8/27/16.
+ * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 7/28/16.
  */
-public interface RangeBanStorage extends Loadable, Shutdownable
+public class BungeeLoggerLogger implements DeltaBansLogger
 {
-    void add(RangeBanEntry banEntry);
+    private BungeeLog logger;
 
-    RangeBanEntry getIpRangeBan(String ip);
+    public BungeeLoggerLogger(BungeeLog logger)
+    {
+        this.logger = logger;
+    }
 
-    RangeBanEntry getIpRangeBan(long ipAsLong);
+    @Override
+    public void info(String message)
+    {
+        logger.info(message);
+    }
 
-    int removeIpRangeBan(String ip);
+    @Override
+    public void severe(String message)
+    {
+        logger.error(message);
+    }
 
-    int removeIpRangeBan(long ipAsLong);
-
-    int getTotalRangeBanCount();
+    @Override
+    public void debug(String message)
+    {
+        logger.debug(message);
+    }
 }

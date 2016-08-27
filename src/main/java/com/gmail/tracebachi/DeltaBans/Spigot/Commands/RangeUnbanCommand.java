@@ -24,13 +24,9 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -94,22 +90,12 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable, Shutdow
             return true;
         }
 
-        String channelMessage = buildMessage(banner, ip, isSilent);
-
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.RANGE_UNBAN,
-            channelMessage);
-
+            banner,
+            ip,
+            isSilent ? "1" : "0");
         return true;
-    }
-
-    private String buildMessage(String name, String ip, boolean isSilent)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(name);
-        out.writeUTF(ip);   // TODO Use Long like in rangeban?
-        out.writeBoolean(isSilent);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

@@ -16,134 +16,23 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
 
-import com.google.common.base.Preconditions;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.gmail.tracebachi.DeltaBans.Bungee.Entries.WarningEntry;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 
-import java.util.*;
+import java.util.List;
 
 /**
- * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
+ * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 8/27/16.
  */
-public class WarningStorage
+public interface WarningStorage extends Loadable, Shutdownable
 {
-    private HashMap<String, List<WarningEntry>> warningsMap = new HashMap<>();
+    List<WarningEntry> getWarnings(String name);
 
-    public synchronized List<WarningEntry> getWarnings(String name)
-    {
-        Preconditions.checkNotNull(name, "Name cannot be null.");
-        name = name.toLowerCase();
+    int addWarning(WarningEntry entry);
 
-        List<WarningEntry> warnings = warningsMap.get(name);
+    int removeWarning(String name, int amount);
 
-        if(warnings == null)
-        {
-            return Collections.emptyList();
-        }
-        else if(warnings.size() == 0)
-        {
-            warningsMap.remove(name);
-            return Collections.emptyList();
-        }
-        else
-        {
-            return Collections.unmodifiableList(warnings);
-        }
-    }
+    void removeExpired();
 
-    public synchronized int add(String name, WarningEntry entry)
-    {
-        Preconditions.checkNotNull(name, "Name cannot be null.");
-        Preconditions.checkNotNull(entry, "Message cannot be null.");
-        name = name.toLowerCase();
-
-        List<WarningEntry> warnings = warningsMap.get(name);
-
-        if(warnings == null)
-        {
-            warnings = new ArrayList<>();
-            warningsMap.put(name, warnings);
-        }
-
-        warnings.add(entry);
-        return warnings.size();
-    }
-
-    public synchronized int remove(String name, int amount)
-    {
-        Preconditions.checkNotNull(name, "Name cannot be null.");
-        name = name.toLowerCase();
-
-        int count = 0;
-        List<WarningEntry> warnings = warningsMap.get(name);
-
-        if(warnings != null)
-        {
-            for(int i = amount; i > 0 && warnings.size() >= 0; i--)
-            {
-                if(warnings.size() <= 1)
-                {
-                    warnings.clear();
-                    warningsMap.remove(name);
-                    i = 0;
-                }
-                else
-                {
-                    warnings.remove(warnings.size() - 1);
-                }
-
-                count++;
-            }
-        }
-
-        return count;
-    }
-
-    public void cleanupWarnings(long warningDuration)
-    {
-        Iterator<Map.Entry<String, List<WarningEntry>>> iterator = warningsMap.entrySet().iterator();
-        long oldestTime = System.currentTimeMillis() - warningDuration;
-
-        while(iterator.hasNext())
-        {
-            Map.Entry<String, List<WarningEntry>> entry = iterator.next();
-            ListIterator<WarningEntry> listIterator = entry.getValue().listIterator();
-
-            while(listIterator.hasNext())
-            {
-                WarningEntry warningEntry = listIterator.next();
-
-                if(warningEntry.getCreatedAt() < oldestTime)
-                {
-                    listIterator.remove();
-                }
-            }
-
-            if(entry.getValue().size() == 0)
-            {
-                iterator.remove();
-            }
-        }
-    }
-
-    public synchronized JsonArray toJson()
-    {
-        JsonArray array = new JsonArray();
-
-        for(Map.Entry<String, List<WarningEntry>> entry : warningsMap.entrySet())
-        {
-            JsonObject object = new JsonObject();
-            JsonArray warnings = new JsonArray();
-
-            for(WarningEntry warningEntry : entry.getValue())
-            {
-                warnings.add(warningEntry.toJson());
-            }
-
-            object.addProperty("name", entry.getKey());
-            object.add("warnings", warnings);
-        }
-
-        return array;
-    }
+    int getTotalWarningCount();
 }

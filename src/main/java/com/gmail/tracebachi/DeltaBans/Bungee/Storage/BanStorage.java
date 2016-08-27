@@ -16,168 +16,31 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
 
-import com.google.common.base.Preconditions;
-import com.google.gson.JsonArray;
+import com.gmail.tracebachi.DeltaBans.Bungee.Entries.BanEntry;
+import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 /**
- * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
+ * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 8/27/16.
  */
-public class BanStorage
+public interface BanStorage extends Loadable, Shutdownable
 {
-    private HashSet<BanEntry> banSet = new HashSet<>();
-    private HashMap<String, BanEntry> nameMap = new HashMap<>();
-    private HashMap<String, Set<BanEntry>> ipMap = new HashMap<>();
+    int getTotalBanCount();
 
-    public synchronized void add(BanEntry ban)
+    AddResult addBanEntry(BanEntry ban);
+
+    List<BanEntry> removeUsingIp(String ip);
+
+    BanEntry removeUsingName(String name);
+
+    BanEntry getBanEntry(String name, String ip);
+
+    enum AddResult
     {
-        Preconditions.checkNotNull(ban, "Ban was null.");
-
-        // Add to the main ban set
-        banSet.add(ban);
-
-        // If the ban has a name, add it to the name map
-        if(ban.hasName())
-        {
-            nameMap.put(ban.getName(), ban);
-        }
-
-        // If the ban has an ip, add it to the ip map
-        if(ban.hasIp())
-        {
-            Set<BanEntry> bansOnIp = ipMap.get(ban.getIp());
-
-            if(bansOnIp == null)
-            {
-                bansOnIp = new HashSet<>();
-                ipMap.put(ban.getIp(), bansOnIp);
-            }
-
-            bansOnIp.add(ban);
-        }
-    }
-
-    public synchronized void removeExactBanEntry(BanEntry ban)
-    {
-        Preconditions.checkNotNull(ban, "Ban cannot be null.");
-
-        // Remove from the main ban set
-        banSet.remove(ban);
-
-        // If the ban has a name, add it to the name map
-        if(ban.hasName())
-        {
-            nameMap.remove(ban.getName());
-        }
-
-        // If the ban has an ip, add it to the ip map
-        if(ban.hasIp())
-        {
-            Set<BanEntry> bansOnIp = ipMap.get(ban.getIp());
-
-            if(bansOnIp != null)
-            {
-                // Remove the ban from the set
-                bansOnIp.remove(ban);
-
-                if(bansOnIp.size() == 0)
-                {
-                    // Remove the now-empty list
-                    ipMap.remove(ban.getIp());
-                }
-            }
-        }
-    }
-
-    public synchronized Set<BanEntry> removeUsingIp(String ip)
-    {
-        Preconditions.checkNotNull(ip, "IP was null.");
-
-        // Remove from the IP map
-        Set<BanEntry> entriesToRemove = ipMap.remove(ip);
-
-        if(entriesToRemove != null)
-        {
-            // Loop through every ban associated with the IP
-            for(BanEntry entry : entriesToRemove)
-            {
-                // Remove from the name map if it has a name
-                if(entry.hasName())
-                {
-                    nameMap.remove(entry.getName());
-                }
-
-                // Remove from the general ban set
-                // Comparison is based on memory address, which is the desired behavior
-                banSet.remove(entry);
-            }
-        }
-
-        return entriesToRemove;
-    }
-
-    public synchronized BanEntry removeUsingName(String name)
-    {
-        Preconditions.checkNotNull(name, "Name was null.");
-
-        // Remove from the name map
-        name = name.toLowerCase();
-        BanEntry entryToRemove = nameMap.remove(name);
-
-        if(entryToRemove != null)
-        {
-            // Remove from the ip map if it has an IP
-            if(entryToRemove.hasIp())
-            {
-                Set<BanEntry> bansOnIp = ipMap.getOrDefault(
-                    entryToRemove.getIp(), Collections.emptySet());
-
-                // Remove from the ip ban set
-                // Comparison is based on memory address, which is the desired behavior
-                bansOnIp.remove(entryToRemove);
-            }
-
-            // Remove from the general ban set
-            // Comparison is based on memory address, which is the desired behavior
-            banSet.remove(entryToRemove);
-        }
-
-        return entryToRemove;
-    }
-
-    public synchronized boolean isIpBanned(String ip)
-    {
-        return ipMap.containsKey(ip);
-    }
-
-    public synchronized Set<BanEntry> getIpBanEntries(String ip)
-    {
-        return ipMap.getOrDefault(ip, Collections.emptySet());
-    }
-
-    public synchronized boolean isNameBanned(String name)
-    {
-        return nameMap.containsKey(name.toLowerCase());
-    }
-
-    public synchronized BanEntry getNameBanEntry(String name)
-    {
-        return nameMap.get(name.toLowerCase());
-    }
-
-    public synchronized JsonArray toJson()
-    {
-        JsonArray array = new JsonArray();
-
-        for(BanEntry entry : banSet)
-        {
-            array.add(entry.toJson());
-        }
-
-        return array;
+        SUCCESS,
+        NAME_ALREADY_BANNED,
+        IP_ALREADY_BANNED,
+        NAME_AND_IP_ALREADY_BANNED
     }
 }

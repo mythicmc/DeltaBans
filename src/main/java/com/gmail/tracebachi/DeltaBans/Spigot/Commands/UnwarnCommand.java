@@ -24,13 +24,10 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -105,24 +102,14 @@ public class UnwarnCommand implements TabExecutor, Registerable, Shutdownable
             amount = (amount == null) ? 1 : amount;
         }
 
-        String channelMessage = buildMessage(warner, name, amount, isSilent);
-
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.UNWARN,
-            channelMessage);
-
+            warner,
+            name,
+            Integer.toHexString(amount),
+            isSilent ? "1" : "0");
         return true;
-    }
-
-    private String buildMessage(String warner, String name, Integer amount, boolean isSilent)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(warner);
-        out.writeUTF(name);
-        out.writeUTF(Integer.toHexString(amount));
-        out.writeBoolean(isSilent);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 
     private Integer parseInt(String source)

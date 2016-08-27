@@ -23,11 +23,9 @@ import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
+import com.gmail.tracebachi.DeltaRedis.Shared.SplitPatterns;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisMessageEvent;
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -38,7 +36,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -126,13 +123,13 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        String channelMessage = buildMessage(warner, name, message, isSilent);
-
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.WARN,
-            channelMessage);
-
+            warner,
+            name,
+            message,
+            isSilent ? "1" : "0");
         return true;
     }
 
@@ -141,12 +138,11 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
     {
         if(event.getChannel().equals(DeltaBansChannels.WARN))
         {
-            byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
-            ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
-            String senderName = in.readUTF();
-            String receiver = in.readUTF();
-            String message = in.readUTF();
-            Integer amount = Integer.parseInt(in.readUTF(), 16);
+            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 4);
+            String senderName = splitMessage[0];
+            String receiver = splitMessage[1];
+            String message = splitMessage[2];
+            Integer amount = Integer.parseInt(splitMessage[3], 16);
 
             Player player = Bukkit.getPlayerExact(senderName);
 
@@ -164,16 +160,6 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
         }
     }
 
-    private String buildMessage(String warner, String name, String message, boolean isSilent)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(warner);
-        out.writeUTF(name);
-        out.writeUTF(message);
-        out.writeBoolean(isSilent);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
-    }
-
     private void dispatchWarn(CommandSender sender, String receiver, String message, Integer warnAmount)
     {
         for(String command : Settings.getWarningCommands(warnAmount))
@@ -187,7 +173,10 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
             {
                 Bukkit.dispatchCommand(sender, messageReplaced);
             }
-            catch(Exception ignored) {}
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
         }
     }
 }

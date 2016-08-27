@@ -24,14 +24,11 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -69,7 +66,8 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    public List<String> onTabComplete(CommandSender sender, Command command,
+                                      String s, String[] args)
     {
         String lastArg = args[args.length - 1];
         return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
@@ -98,22 +96,22 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
         }
 
         String banner = sender.getName();
-        String possibleIp = args[0];
+        String ip = args[0];
         String name = null;
         String message = Settings.format("DefaultBanMessage");
 
-        if(banner.equalsIgnoreCase(possibleIp))
+        if(banner.equalsIgnoreCase(ip))
         {
             sender.sendMessage(Settings.format("BanSelf"));
             return true;
         }
 
-        if(!DeltaBansUtils.isIp(possibleIp))
+        if(!DeltaBansUtils.isIp(ip))
         {
-            name = possibleIp;
-            possibleIp = plugin.getIpOfPlayer(name);
+            name = ip;
+            ip = plugin.getIpOfPlayer(name);
 
-            if(possibleIp == null)
+            if(ip == null)
             {
                 sender.sendMessage(Settings.format("NoIpFound", name));
                 return true;
@@ -126,35 +124,15 @@ public class BanCommand implements TabExecutor, Registerable, Shutdownable
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        String channelMessage = buildMessage(banner, message, possibleIp, name, isSilent);
-
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.BAN,
-            channelMessage);
-
+            name == null ? "" : name,
+            ip == null ? "" : ip,
+            banner,
+            message,
+            "",
+            isSilent ? "1" : "0");
         return true;
-    }
-
-    private String buildMessage(String banner, String banMessage, String ip, String name, boolean isSilent)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(banner);
-        out.writeUTF(banMessage);
-        out.writeUTF(ip);
-        out.writeUTF(Long.toHexString(0));
-        out.writeBoolean(isSilent);
-
-        if(name != null)
-        {
-            out.writeBoolean(true);
-            out.writeUTF(name);
-        }
-        else
-        {
-            out.writeBoolean(false);
-        }
-
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

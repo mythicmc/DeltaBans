@@ -24,14 +24,11 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -98,16 +95,16 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
         }
 
         String banner = sender.getName();
-        String banee = args[0];
+        String name = args[0];
         String message = Settings.format("DefaultBanMessage");
 
-        if(banner.equalsIgnoreCase(banee))
+        if(banner.equalsIgnoreCase(name))
         {
             sender.sendMessage(Settings.format("BanSelf"));
             return true;
         }
 
-        if(DeltaBansUtils.isIp(banee))
+        if(DeltaBansUtils.isIp(name))
         {
             sender.sendMessage(Settings.format("IpInNameBan"));
             return true;
@@ -119,23 +116,15 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        String channelMessage = buildMessage(banner, message, banee, isSilent);
-
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
-            DeltaBansChannels.NAME_BAN,
-            channelMessage);
-
+            DeltaBansChannels.BAN,
+            name,
+            "",
+            banner,
+            message,
+            "",
+            isSilent ? "1" : "0");
         return true;
-    }
-
-    private String buildMessage(String banner, String banMessage, String name, boolean isSilent)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(banner);
-        out.writeUTF(banMessage);
-        out.writeUTF(name);
-        out.writeBoolean(isSilent);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

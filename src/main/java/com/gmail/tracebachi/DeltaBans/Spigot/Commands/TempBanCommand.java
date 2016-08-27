@@ -24,14 +24,11 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -97,21 +94,33 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
         }
 
         String banner = sender.getName();
-        String possibleIp = args[0];
+        String ip = args[0];
         String name = null;
         String message = Settings.format("DefaultTempBanMessage");
         Long duration = getDuration(args[1]);
-
-        if(banner.equalsIgnoreCase(possibleIp))
-        {
-            sender.sendMessage(Settings.format("BanSelf"));
-            return true;
-        }
 
         if(duration <= 0)
         {
             sender.sendMessage(Settings.format("InvalidDuration", args[1]));
             return true;
+        }
+
+        if(banner.equalsIgnoreCase(ip))
+        {
+            sender.sendMessage(Settings.format("BanSelf"));
+            return true;
+        }
+
+        if(!DeltaBansUtils.isIp(ip))
+        {
+            name = ip;
+            ip = plugin.getIpOfPlayer(name);
+
+            if(ip == null)
+            {
+                sender.sendMessage(Settings.format("NoIpFound", name));
+                return true;
+            }
         }
 
         if(args.length > 2)
@@ -120,45 +129,16 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        if(!DeltaBansUtils.isIp(possibleIp))
-        {
-            name = possibleIp;
-            possibleIp = plugin.getIpOfPlayer(name);
-
-            if(possibleIp == null)
-            {
-                sender.sendMessage(Settings.format("NoIpFound", name));
-                return true;
-            }
-        }
-
-        String channelMessage = buildMessage(banner, message, possibleIp, duration, name, isSilent);
-
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.BAN,
-            channelMessage);
-
+            name == null ? "" : name,
+            ip == null ? "" : ip,
+            banner,
+            message,
+            Long.toHexString(duration * 1000),
+            isSilent ? "1" : "0");
         return true;
-    }
-
-    private String buildMessage(String banner, String banMessage, String ip, long duration,
-        String name, boolean isSilent)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(banner);
-        out.writeUTF(banMessage);
-        out.writeUTF(ip);
-        out.writeUTF(Long.toHexString(duration * 1000));
-        out.writeBoolean(isSilent);
-        out.writeBoolean(name != null);
-
-        if(name != null)
-        {
-            out.writeUTF(name);
-        }
-
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 
     private long getDuration(String input)
@@ -179,6 +159,9 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
                 break;
             case 'd':
                 multiplier = 60 * 60 * 24;
+                break;
+            case 'w':
+                multiplier = 60 * 60 * 24 * 7;
                 break;
             default:
                 hasEndingChar = false;
