@@ -34,6 +34,7 @@ public class DeltaBans extends JavaPlugin
     private RangeUnbanCommand rangeUnbanCommand;
     private RangeWhitelistCommand rangeWhitelistCommand;
     private TempBanCommand tempBanCommand;
+    private TempNameBanCommand tempNameBanCommand;
     private UnbanCommand unbanCommand;
     private UnwarnCommand unwarnCommand;
     private WarnCommand warnCommand;
@@ -75,6 +76,9 @@ public class DeltaBans extends JavaPlugin
         tempBanCommand = new TempBanCommand(this);
         tempBanCommand.register();
 
+        tempNameBanCommand = new TempNameBanCommand(this);
+        tempNameBanCommand.register();
+
         unbanCommand = new UnbanCommand(this);
         unbanCommand.register();
 
@@ -102,6 +106,9 @@ public class DeltaBans extends JavaPlugin
 
         unbanCommand.shutdown();
         unbanCommand = null;
+
+        tempNameBanCommand.shutdown();
+        tempNameBanCommand = null;
 
         tempBanCommand.shutdown();
         tempBanCommand = null;

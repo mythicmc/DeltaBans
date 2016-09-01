@@ -20,8 +20,9 @@ Formats:
 
   BanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /ban <name|ip> [message]'
   UnbanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /unban <name|ip>'
-  NameBanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /nameban <name|ip> [message]'
+  NameBanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /nameban <name> [message]'
   TempBanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /tempban <name|ip> <duration> [message]'
+  TempNameBanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /tempnameban <name> <duration> [message]'
   DefaultBanMessage: 'The Ban Hammer has spoken!'
   DefaultTempBanMessage: 'You have been temporarily banned from this server!'
   BanSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to ban yourself?'
