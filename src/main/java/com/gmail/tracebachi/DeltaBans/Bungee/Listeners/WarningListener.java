@@ -27,14 +27,11 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.SplitPatterns;
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteStreams;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
 import net.md_5.bungee.event.EventHandler;
 
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -93,8 +90,6 @@ public class WarningListener implements Listener, Registerable, Shutdownable
     {
         DeltaRedisApi api = DeltaRedisApi.instance();
         String channel = event.getChannel();
-        byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
-        ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
 
         if(channel.equals(DeltaBansChannels.WARN))
         {
@@ -142,7 +137,7 @@ public class WarningListener implements Listener, Registerable, Shutdownable
             int amountActuallyRemoved = warningStorage.removeWarning(name, amount);
 
             String announcement = Settings.format(
-                "RemovedWarnings",
+                "UnwarnAnnouncement",
                 warner,
                 String.valueOf(amountActuallyRemoved),
                 name);

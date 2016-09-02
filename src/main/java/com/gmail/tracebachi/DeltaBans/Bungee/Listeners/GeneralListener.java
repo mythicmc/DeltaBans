@@ -28,17 +28,18 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.SplitPatterns;
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteStreams;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.PendingConnection;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static com.gmail.tracebachi.DeltaRedis.Shared.Prefixes.INFO;
@@ -107,10 +108,39 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
         DeltaRedisApi api = DeltaRedisApi.instance();
         String channel = event.getChannel();
 
-        byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
-        ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
+        if(event.getChannel().equals(DeltaBansChannels.KICK))
+        {
+            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 4);
+            String kicker = splitMessage[0];
+            String nameToKick = splitMessage[1];
+            String message = splitMessage[2];
+            boolean isSilent = splitMessage[3].equals("1");
+            ProxiedPlayer playerToKick = plugin.getProxy().getPlayer(nameToKick);
 
-        if(channel.equals(DeltaBansChannels.BANNED))
+            if(playerToKick != null)
+            {
+                String kickMessage = Settings.format("KickMessageToPlayer",
+                    kicker,
+                    nameToKick,
+                    message);
+                BaseComponent[] textComponent = TextComponent.fromLegacyText(kickMessage);
+                playerToKick.disconnect(textComponent);
+
+                String announcement = Settings.format("KickMessageToAnnounce",
+                    kicker,
+                    nameToKick,
+                    message);
+                announce(announcement, isSilent);
+            }
+            else
+            {
+                api.sendMessageToPlayer(
+                    event.getSendingServer(),
+                    kicker,
+                    Settings.format("NotOnline", nameToKick));
+            }
+        }
+        else if(channel.equals(DeltaBansChannels.BANNED))
         {
             String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 4);
             String sender = splitMessage[0];
@@ -243,6 +273,24 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                         Settings.format("NotInWhitelist", name, "rangeban"));
                 }
             }
+        }
+    }
+
+    private void announce(String announcement, boolean isSilent)
+    {
+        if(isSilent)
+        {
+            DeltaRedisApi.instance().sendAnnouncementToServer(
+                Servers.SPIGOT,
+                Settings.format("SilentPrefix") + announcement,
+                "DeltaBans.SeeSilent");
+        }
+        else
+        {
+            DeltaRedisApi.instance().sendAnnouncementToServer(
+                Servers.SPIGOT,
+                announcement,
+                "");
         }
     }
 
