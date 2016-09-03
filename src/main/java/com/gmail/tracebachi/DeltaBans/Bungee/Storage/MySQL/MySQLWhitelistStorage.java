@@ -69,7 +69,7 @@ public class MySQLWhitelistStorage implements WhitelistStorage
             {
                 try(ResultSet resultSet = statement.executeQuery())
                 {
-                    if(resultSet.next())
+                    while(resultSet.next())
                     {
                         try
                         {

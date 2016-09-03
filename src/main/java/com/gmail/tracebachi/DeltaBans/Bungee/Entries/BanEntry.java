@@ -109,40 +109,9 @@ public final class BanEntry
         return createdAt;
     }
 
-    public static BanEntry fromJson(JsonObject object)
+    @Override
+    public String toString()
     {
-        JsonElement name = object.get("name");
-        JsonElement ip = object.get("ip");
-        JsonElement banner = object.get("banner");
-        JsonElement message = object.get("message");
-        JsonElement duration = object.get("duration");
-        JsonElement createdAt = object.get("created_at");
-
-        if((name == null && ip == null) || banner == null)
-        {
-            throw new IllegalArgumentException("Ban is not properly formatted:\n" +
-                object.toString());
-        }
-
-        return new BanEntry(
-            name == null ? null : name.getAsString(),
-            ip == null ? null : ip.getAsString(),
-            banner.getAsString(),
-            message == null ? "Unspecified Reason" : message.getAsString(),
-            duration == null ? null : duration.getAsLong(),
-            createdAt == null ? null : createdAt.getAsLong()
-        );
-    }
-
-    public JsonObject toJson()
-    {
-        JsonObject object = new JsonObject();
-        object.addProperty("name", name);
-        object.addProperty("ip", ip);
-        object.addProperty("banner", banner);
-        object.addProperty("message", message);
-        object.addProperty("duration", duration);
-        object.addProperty("created_at", createdAt);
-        return object;
+        return name + "," + ip + "," + banner + "," + message + "," + duration + "," + createdAt;
     }
 }

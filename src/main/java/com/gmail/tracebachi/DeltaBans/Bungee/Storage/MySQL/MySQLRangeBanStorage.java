@@ -62,7 +62,7 @@ public class MySQLRangeBanStorage implements RangeBanStorage
             {
                 try(ResultSet resultSet = statement.executeQuery())
                 {
-                    if(resultSet.next())
+                    while(resultSet.next())
                     {
                         loadFromResultSet(resultSet);
                     }
