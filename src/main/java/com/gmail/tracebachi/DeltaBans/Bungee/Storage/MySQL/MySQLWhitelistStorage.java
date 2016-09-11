@@ -73,7 +73,7 @@ public class MySQLWhitelistStorage implements WhitelistStorage
                     {
                         try
                         {
-                            String name = resultSet.getString("name");
+                            String name = resultSet.getString("name").toLowerCase();
                             int type = resultSet.getInt("type");
 
                             whitelistMap.put(name, type);
