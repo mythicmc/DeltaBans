@@ -24,13 +24,9 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -84,33 +80,22 @@ public class UnbanCommand implements CommandExecutor, Registerable, Shutdownable
             return true;
         }
 
-        String banner = sender.getName();
+        String senderName = sender.getName();
         String banee = args[0];
-        boolean isIp = DeltaBansUtils.isIp(banee);
 
-        if(banee.equals(banner))
+        if(banee.equals(senderName))
         {
             sender.sendMessage(Settings.format("UnbanSelf"));
             return true;
         }
 
-        String channelMessage = buildMessage(banner, banee, isIp, isSilent);
-
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.UNBAN,
-            channelMessage);
-
+            senderName,
+            banee,
+            DeltaBansUtils.isIp(banee) ? "1" : "0",
+            isSilent ? "1" : "0");
         return true;
-    }
-
-    private String buildMessage(String sender, String banee, boolean isIp, boolean isSilent)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(sender);
-        out.writeUTF(banee);
-        out.writeBoolean(isIp);
-        out.writeBoolean(isSilent);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

@@ -2,5 +2,5 @@ name: DeltaBans
 main: com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans
 version: ${project.version}
 author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
-depends: [DeltaRedis]
+depends: [DbShare, DeltaRedis]
 softdepends: [BungeeLogger]

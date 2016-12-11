@@ -1,4 +1,9 @@
+###############################################################################
 # DeltaBans Configuration File (Bungee)
+###############################################################################
+
+# Name of the DataSource in DbShare
+DbShareDataSourceName: Main
 
 # Delay between every save of bans.json and warnings.json
 MinutesPerBanSave: 5
@@ -26,27 +31,24 @@ Formats:
   RangeBanAnnouncement: '&8[&6Ban&8]&6 &f{0}&6 range-banned &f{1}&6 for &f{2}&6.'
   RangeUnbanAnnouncement: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6 IP ranges that overlapped with &f{2}&6'
   WarnAnnouncement: '&8[&6Warn&8]&6 &f{0}&6 warned &f{1}&6 for &f{2}&6.'
+  UnwarnAnnouncement: '&8[&a!&8] &aSuccess &8[&a!&8]&7 &f{0}&7 removed &f{1}&7 warnings from &f{2}&7.'
 
-  AddedToRangeBanWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Added &f{0}&7 to range-ban whitelist.'
-  AlreadyInRangeBanWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already in the range-ban whitelist.'
-  RemovedFromRangeBanWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Removed &f{0}&7 from range-ban whitelist.'
-  NotInRangeBanWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not in the range-ban whitelist.'
+  BanNotFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 Ban not found for &f{0}&7.'
+  NameAlreadyBanned: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already banned.'
+  IpAlreadyBanned: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already banned.'
+  NameAndIpAlreadyBanned: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 @ &f{1}&7 is already banned.'
 
   WhitelistMessage: '&8[&6!&8]&7=&8[&6 Server is currently in whitelist mode. &8]&7=&8[&6!&8]'
   WhitelistToggle: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Whitelist has been &f{0}&7.'
-  AddedToWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Added &f{0}&7 to whitelist.'
-  AlreadyInWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already in the whitelist.'
-  RemovedFromWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Removed &f{0}&7 from whitelist.'
-  NotInWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not in the whitelist.'
 
-  RemovedWarnings: '&8[&a!&8] &aSuccess &8[&a!&8]&7 &f{0}&7 removed &f{1}&7 warnings from &f{2}&7.'
+  AddedToWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Added &f{0}&7 to &f{1}&7 whitelist.'
+  AlreadyInWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already in the &f{1}&7 whitelist.'
+  RemovedFromWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Removed &f{0}&7 from &f{1}&7 whitelist.'
+  NotInWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not in the &f{1}&7 whitelist.'
 
-  SaveSucess: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Bans, warnings, range-whitelist, and whitelist have been saved.'
-  SaveFailure: '&8[&c!&8] &cFailure &8[&c!&8]&7 There was an error saving. More details available in the BungeeCord logs.'
-
-  AlreadyIpBanned: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already ip-banned.'
-  AlreadyNameBanned: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already name-banned.'
-  BanNotFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 Ban not found for &f{0}&7.'
+  NotOnline: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not online.'
+  KickMessageToPlayer: 'You have been kicked by {0} for {2}.'
+  KickMessageToAnnounce: '&8[&6Kick&8]&7 &f{1}&7 was kicked by &f{0}&7 for &f{2}&7.'
 
 # Used for debugging DeltaBans
 DebugMode: False

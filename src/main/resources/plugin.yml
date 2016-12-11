@@ -16,6 +16,9 @@ commands:
   nameban:
     description: Allows the user to ban names instead of IPs.
     aliases: [dbnameban]
+  tempnameban:
+    description: Allows the user to ban names for a duration.
+    aliases: [dbtempnameban]
   banned:
     description: Allows the user to check if names or IPs are banned.
     aliases: [dbbanned]
@@ -37,9 +40,6 @@ commands:
   rangebanwhitelist:
     description: Allows the user to whitelist a name in a rangeban.
     aliases: [dbrangebanwhitelist]
-  deltabanssave:
-    description: Allows the user to force save ban and warning files.
-    aliases: [dbsave]
   whitelist:
     description: Allows the user to edit or toggle the network whitelist.
     aliases: [dbwhitelist]

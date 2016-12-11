@@ -1,15 +1,15 @@
 package com.gmail.tracebachi.DeltaBans.Bungee.Loggers;
 
-import io.github.kyzderp.bungeelogger.BungeeLog;
+import java.util.logging.Logger;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 7/28/16.
  */
-public class BungeeLogger implements DeltaBansLogger
+public class JavaLoggingLogger implements DeltaBansLogger
 {
-    private BungeeLog logger;
+    private Logger logger;
 
-    public BungeeLogger(BungeeLog logger)
+    public JavaLoggingLogger(Logger logger)
     {
         this.logger = logger;
     }
@@ -23,12 +23,12 @@ public class BungeeLogger implements DeltaBansLogger
     @Override
     public void severe(String message)
     {
-        logger.error(message);
+        logger.severe(message);
     }
 
     @Override
     public void debug(String message)
     {
-        logger.debug(message);
+        logger.info("[Debug] " + message);
     }
 }

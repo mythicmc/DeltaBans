@@ -33,8 +33,8 @@ public class DeltaBans extends JavaPlugin
     private RangeBanCommand rangeBanCommand;
     private RangeUnbanCommand rangeUnbanCommand;
     private RangeWhitelistCommand rangeWhitelistCommand;
-    private SaveCommand saveCommand;
     private TempBanCommand tempBanCommand;
+    private TempNameBanCommand tempNameBanCommand;
     private UnbanCommand unbanCommand;
     private UnwarnCommand unwarnCommand;
     private WarnCommand warnCommand;
@@ -73,11 +73,11 @@ public class DeltaBans extends JavaPlugin
         rangeWhitelistCommand = new RangeWhitelistCommand(this);
         rangeWhitelistCommand.register();
 
-        saveCommand = new SaveCommand(this);
-        saveCommand.register();
-
         tempBanCommand = new TempBanCommand(this);
         tempBanCommand.register();
+
+        tempNameBanCommand = new TempNameBanCommand(this);
+        tempNameBanCommand.register();
 
         unbanCommand = new UnbanCommand(this);
         unbanCommand.register();
@@ -107,11 +107,11 @@ public class DeltaBans extends JavaPlugin
         unbanCommand.shutdown();
         unbanCommand = null;
 
+        tempNameBanCommand.shutdown();
+        tempNameBanCommand = null;
+
         tempBanCommand.shutdown();
         tempBanCommand = null;
-
-        saveCommand.shutdown();
-        saveCommand = null;
 
         rangeUnbanCommand.shutdown();
         rangeUnbanCommand = null;
@@ -137,7 +137,7 @@ public class DeltaBans extends JavaPlugin
 
     public String getIpOfPlayer(String playerName)
     {
-        try(Connection connection = Settings.getDataSource().getConnection())
+        try(Connection connection = Settings.getDataSourceConnection())
         {
             try(PreparedStatement statement = connection.prepareStatement(Settings.getIpLookupQuery()))
             {
@@ -145,14 +145,16 @@ public class DeltaBans extends JavaPlugin
 
                 try(ResultSet resultSet = statement.executeQuery())
                 {
-                    return (resultSet.next()) ? resultSet.getString("lastloginip") : null;
+                    return (resultSet.next()) ?
+                        resultSet.getString(Settings.getIpColumnName()) :
+                        null;
                 }
             }
         }
         catch(SQLException ex)
         {
             ex.printStackTrace();
-            throw new IllegalArgumentException("Failed to access the xAuth accounts table.");
+            throw new IllegalArgumentException("Failed to access the accounts table.");
         }
     }
 

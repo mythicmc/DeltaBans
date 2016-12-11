@@ -17,8 +17,8 @@
 package com.gmail.tracebachi.DeltaBans.Bungee.Listeners;
 
 import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans;
+import com.gmail.tracebachi.DeltaBans.Bungee.Entries.WarningEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Settings;
-import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningStorage;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
@@ -26,13 +26,13 @@ import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
 import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
+import com.gmail.tracebachi.DeltaRedis.Shared.SplitPatterns;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Listener;
+import net.md_5.bungee.api.scheduler.ScheduledTask;
 import net.md_5.bungee.event.EventHandler;
 
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -40,24 +40,40 @@ import java.nio.charset.StandardCharsets;
 public class WarningListener implements Listener, Registerable, Shutdownable
 {
     private WarningStorage warningStorage;
+    private ScheduledTask scheduledTask;
     private DeltaBans plugin;
 
     public WarningListener(WarningStorage warningStorage, DeltaBans plugin)
     {
-        this.warningStorage = warningStorage;
         this.plugin = plugin;
+        this.warningStorage = warningStorage;
     }
 
     @Override
     public void register()
     {
-        plugin.getProxy().getPluginManager().registerListener(plugin, this);
+        ProxyServer proxy = plugin.getProxy();
+        proxy.getPluginManager().registerListener(plugin, this);
+
+        scheduledTask = proxy.getScheduler().schedule(plugin,
+            warningStorage::removeExpired,
+            10,
+            // Delay
+            10,
+            // Period
+            TimeUnit.MINUTES);
+
+        plugin.debug("WarningListener registered.");
     }
 
     @Override
     public void unregister()
     {
-        plugin.getProxy().getPluginManager().unregisterListener(this);
+        ProxyServer proxy = plugin.getProxy();
+        proxy.getPluginManager().unregisterListener(this);
+        proxy.getScheduler().cancel(scheduledTask);
+
+        plugin.debug("WarningListener unregistered.");
     }
 
     @Override
@@ -65,6 +81,7 @@ public class WarningListener implements Listener, Registerable, Shutdownable
     {
         unregister();
         warningStorage = null;
+        scheduledTask = null;
         plugin = null;
     }
 
@@ -73,27 +90,24 @@ public class WarningListener implements Listener, Registerable, Shutdownable
     {
         DeltaRedisApi api = DeltaRedisApi.instance();
         String channel = event.getChannel();
-        byte[] messageBytes = event.getMessage().getBytes(StandardCharsets.UTF_8);
-        ByteArrayDataInput in = ByteStreams.newDataInput(messageBytes);
 
         if(channel.equals(DeltaBansChannels.WARN))
         {
-            String warner = in.readUTF();
-            String name = in.readUTF();
-            String message = in.readUTF();
-            boolean isSilent = in.readBoolean();
-            int count = warningStorage.add(name, new WarningEntry(warner, message));
+            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 4);
+            String warner = splitMessage[0];
+            String name = splitMessage[1];
+            String message = splitMessage[2];
+            boolean isSilent = splitMessage[3].equals("1");
 
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF(warner);
-            out.writeUTF(name);
-            out.writeUTF(message);
-            out.writeUTF(Integer.toHexString(count));
+            int count = warningStorage.addWarning(new WarningEntry(name, warner, message));
 
             api.publish(
                 event.getSendingServer(),
                 DeltaBansChannels.WARN,
-                new String(out.toByteArray(), StandardCharsets.UTF_8));
+                warner,
+                name,
+                message,
+                Integer.toHexString(count));
 
             String announcement = Settings.format("WarnAnnouncement", warner, name, message);
 
@@ -114,15 +128,19 @@ public class WarningListener implements Listener, Registerable, Shutdownable
         }
         else if(channel.equalsIgnoreCase(DeltaBansChannels.UNWARN))
         {
-            String warner = in.readUTF();
-            String name = in.readUTF();
-            int amount = Integer.parseInt(in.readUTF(), 16);
-            boolean isSilent = in.readBoolean();
+            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 4);
+            String warner = splitMessage[0];
+            String name = splitMessage[1];
+            int amount = Integer.parseInt(splitMessage[2], 16);
+            boolean isSilent = splitMessage[3].equals("1");
 
-            amount = warningStorage.remove(name, amount);
+            int amountActuallyRemoved = warningStorage.removeWarning(name, amount);
 
-            String announcement = Settings.format("RemovedWarnings",
-                warner, String.valueOf(amount), name);
+            String announcement = Settings.format(
+                "UnwarnAnnouncement",
+                warner,
+                String.valueOf(amountActuallyRemoved),
+                name);
 
             if(isSilent)
             {

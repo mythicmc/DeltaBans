@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
+package com.gmail.tracebachi.DeltaBans.Bungee.Entries;
 
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.google.common.base.Preconditions;
@@ -24,7 +24,7 @@ import com.google.gson.JsonObject;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class RangeBanEntry
+public final class RangeBanEntry
 {
     private final String banner;
     private final String message;

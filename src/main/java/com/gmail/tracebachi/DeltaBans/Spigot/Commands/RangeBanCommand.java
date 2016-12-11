@@ -24,14 +24,11 @@ import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
 import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
@@ -127,43 +124,31 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
             return true;
         }
 
-        String channelMessage;
+        DeltaRedisApi api = DeltaRedisApi.instance();
 
         if(firstAsLong > secondAsLong)
         {
-            channelMessage = buildMessage(
+            api.publish(
+                Servers.BUNGEECORD,
+                DeltaBansChannels.RANGE_BAN,
                 banner,
                 message,
                 splitIpRange[1],
                 splitIpRange[0],
-                isSilent);
+                isSilent ? "1" : "0");
         }
         else
         {
-            channelMessage = buildMessage(
+            api.publish(
+                Servers.BUNGEECORD,
+                DeltaBansChannels.RANGE_BAN,
                 banner,
                 message,
                 splitIpRange[0],
                 splitIpRange[1],
-                isSilent);
+                isSilent ? "1" : "0");
         }
 
-        DeltaRedisApi.instance().publish(
-            Servers.BUNGEECORD,
-            DeltaBansChannels.RANGE_BAN,
-            channelMessage);
-
         return true;
-    }
-
-    private String buildMessage(String name, String message, String start, String end, boolean isSilent)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(name);
-        out.writeUTF(message);
-        out.writeUTF(start);
-        out.writeUTF(end);
-        out.writeBoolean(isSilent);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

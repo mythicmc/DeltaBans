@@ -22,6 +22,8 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
@@ -83,16 +85,37 @@ public class Settings
         return debugEnabled;
     }
 
+    public static String getAccountsTableName()
+    {
+        return accountsTableName;
+    }
+
+    public static String getIpColumnName()
+    {
+        return ipColumnName;
+    }
+
+    public static String getPlayerColumnName()
+    {
+        return playerColumnName;
+    }
+
     public static HikariDataSource getDataSource()
     {
         return DbShare.getDataSource(databaseName);
     }
 
+    public static Connection getDataSourceConnection() throws SQLException
+    {
+        return DbShare.getDataSource(databaseName).getConnection();
+    }
+
     public static String getIpLookupQuery()
     {
-        return "SELECT `" + ipColumnName +
-            "` FROM `" + accountsTableName +
-            "` WHERE `" + playerColumnName + "` = ?;";
+        return
+            "SELECT `" + ipColumnName + "` " +
+            "FROM `" + accountsTableName + "` " +
+            "WHERE `" + playerColumnName + "` = ?;";
     }
 
     public static String format(String key, String... args)

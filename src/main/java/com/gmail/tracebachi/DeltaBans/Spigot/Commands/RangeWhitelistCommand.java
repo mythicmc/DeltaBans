@@ -95,23 +95,25 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
             return true;
         }
 
+        DeltaRedisApi api = DeltaRedisApi.instance();
+
         if(args[0].equalsIgnoreCase("add"))
         {
-            String channelMessage = buildMessage(sender.getName(), args[1], true);
-
-            DeltaRedisApi.instance().publish(
+            api.publish(
                 Servers.BUNGEECORD,
-                DeltaBansChannels.RANGE_WHITELIST,
-                channelMessage);
+                DeltaBansChannels.RANGEBAN_WHITELIST_EDIT,
+                sender.getName(),
+                "1",
+                args[1]);
         }
         else if(args[0].equalsIgnoreCase("remove"))
         {
-            String channelMessage = buildMessage(sender.getName(), args[1], false);
-
-            DeltaRedisApi.instance().publish(
+            api.publish(
                 Servers.BUNGEECORD,
-                DeltaBansChannels.RANGE_WHITELIST,
-                channelMessage);
+                DeltaBansChannels.RANGEBAN_WHITELIST_EDIT,
+                sender.getName(),
+                "0",
+                args[1]);
         }
         else
         {

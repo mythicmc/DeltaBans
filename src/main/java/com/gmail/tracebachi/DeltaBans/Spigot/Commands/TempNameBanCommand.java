@@ -35,11 +35,11 @@ import java.util.List;
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
+public class TempNameBanCommand implements TabExecutor, Registerable, Shutdownable
 {
     private DeltaBans plugin;
 
-    public NameBanCommand(DeltaBans plugin)
+    public TempNameBanCommand(DeltaBans plugin)
     {
         this.plugin = plugin;
     }
@@ -47,15 +47,15 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
     @Override
     public void register()
     {
-        plugin.getCommand("nameban").setExecutor(this);
-        plugin.getCommand("nameban").setTabCompleter(this);
+        plugin.getCommand("tempnameban").setExecutor(this);
+        plugin.getCommand("tempnameban").setTabCompleter(this);
     }
 
     @Override
     public void unregister()
     {
-        plugin.getCommand("nameban").setExecutor(null);
-        plugin.getCommand("nameban").setTabCompleter(null);
+        plugin.getCommand("tempnameban").setExecutor(null);
+        plugin.getCommand("tempnameban").setTabCompleter(null);
     }
 
     @Override
@@ -76,27 +76,33 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
-
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
         }
 
-        if(args.length < 1)
+        if(args.length < 2)
         {
-            sender.sendMessage(Settings.format("NameBanUsage"));
+            sender.sendMessage(Settings.format("TempNameBanUsage"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Ban"))
         {
-            sender.sendMessage(Settings.format("NoPermssion", "DeltaBans.Ban"));
+            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Ban"));
             return true;
         }
 
         String banner = sender.getName();
         String name = args[0];
-        String message = Settings.format("DefaultBanMessage");
+        String message = Settings.format("DefaultTempBanMessage");
+        Long duration = getDuration(args[1]);
+
+        if(duration <= 0)
+        {
+            sender.sendMessage(Settings.format("InvalidDuration", args[1]));
+            return true;
+        }
 
         if(banner.equalsIgnoreCase(name))
         {
@@ -110,9 +116,9 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
             return true;
         }
 
-        if(args.length > 1)
+        if(args.length > 2)
         {
-            message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+            message = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
@@ -123,8 +129,51 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
             "",
             banner,
             message,
-            "",
+            Long.toHexString(duration * 1000),
             isSilent ? "1" : "0");
         return true;
+    }
+
+    private long getDuration(String input)
+    {
+        int multiplier = 1;
+        boolean hasEndingChar = true;
+
+        switch(input.charAt(input.length() - 1))
+        {
+            case 's':
+                multiplier = 1;
+                break;
+            case 'm':
+                multiplier = 60;
+                break;
+            case 'h':
+                multiplier = 60 * 60;
+                break;
+            case 'd':
+                multiplier = 60 * 60 * 24;
+                break;
+            case 'w':
+                multiplier = 60 * 60 * 24 * 7;
+                break;
+            default:
+                hasEndingChar = false;
+                break;
+        }
+
+        if(hasEndingChar)
+        {
+            input = input.substring(0, input.length() - 1);
+        }
+
+        try
+        {
+            int value = Integer.parseInt(input) * multiplier;
+            return (value > 0) ? value : 0;
+        }
+        catch(NumberFormatException ex)
+        {
+            return 0;
+        }
     }
 }

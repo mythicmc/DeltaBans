@@ -14,15 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
+package com.gmail.tracebachi.DeltaBans.Bungee.Entries;
 
+import com.google.common.base.Preconditions;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
-public class BanEntry
+public final class BanEntry
 {
     private final String name;
     private final String ip;
@@ -38,15 +39,8 @@ public class BanEntry
 
     public BanEntry(String name, String ip, String banner, String message, Long duration, Long createdAt)
     {
-        if(name == null && ip == null)
-        {
-            throw new IllegalArgumentException("Name and IP cannot both be null.");
-        }
-
-        if(banner == null)
-        {
-            throw new IllegalArgumentException("Every ban must have a banner.");
-        }
+        Preconditions.checkArgument(name != null || ip != null, "Name and IP were both null.");
+        Preconditions.checkNotNull(banner, "Banner was null.");
 
         if(duration != null && duration <= 0)
         {
@@ -105,7 +99,7 @@ public class BanEntry
     {
         if(duration != null)
         {
-            return (createdAt + duration - System.currentTimeMillis()) < 0;
+            return (duration < System.currentTimeMillis() - createdAt);
         }
         return false;
     }
@@ -115,40 +109,9 @@ public class BanEntry
         return createdAt;
     }
 
-    public static BanEntry fromJson(JsonObject object)
+    @Override
+    public String toString()
     {
-        JsonElement name = object.get("name");
-        JsonElement ip = object.get("ip");
-        JsonElement banner = object.get("banner");
-        JsonElement message = object.get("message");
-        JsonElement duration = object.get("duration");
-        JsonElement createdAt = object.get("created_at");
-
-        if((name == null && ip == null) || banner == null)
-        {
-            throw new IllegalArgumentException("Ban is not properly formatted:\n" +
-                object.toString());
-        }
-
-        return new BanEntry(
-            name == null ? null : name.getAsString(),
-            ip == null ? null : ip.getAsString(),
-            banner.getAsString(),
-            message == null ? "Unspecified Reason" : message.getAsString(),
-            duration == null ? null : duration.getAsLong(),
-            createdAt == null ? null : createdAt.getAsLong()
-        );
-    }
-
-    public JsonObject toJson()
-    {
-        JsonObject object = new JsonObject();
-        object.addProperty("name", name);
-        object.addProperty("ip", ip);
-        object.addProperty("banner", banner);
-        object.addProperty("message", message);
-        object.addProperty("duration", duration);
-        object.addProperty("created_at", createdAt);
-        return object;
+        return name + "," + ip + "," + banner + "," + message + "," + duration + "," + createdAt;
     }
 }
