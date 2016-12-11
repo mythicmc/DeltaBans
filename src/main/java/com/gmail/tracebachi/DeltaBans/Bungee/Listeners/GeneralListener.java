@@ -26,11 +26,10 @@ import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WhitelistStorage;
 import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
-import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisMessageEvent;
-import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Bungee.Events.DeltaRedisMessageEvent;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
-import com.gmail.tracebachi.DeltaRedis.Shared.SplitPatterns;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.PendingConnection;
@@ -42,8 +41,9 @@ import net.md_5.bungee.event.EventPriority;
 
 import java.util.List;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.Prefixes.INFO;
-import static com.gmail.tracebachi.DeltaRedis.Shared.Prefixes.input;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatPlayerOffline;
+
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -69,14 +69,12 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
     public void register()
     {
         plugin.getProxy().getPluginManager().registerListener(plugin, this);
-        plugin.debug("GeneralListener registered.");
     }
 
     @Override
     public void unregister()
     {
         plugin.getProxy().getPluginManager().unregisterListener(this);
-        plugin.debug("GeneralListener unregistered.");
     }
 
     @Override
@@ -97,7 +95,7 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
 
         if(whitelistEnabled && !whitelistStorage.isOnNormalWhitelist(playerName))
         {
-            event.setCancelReason(Settings.format("WhitelistMessage"));
+            event.setCancelReason(format("DeltaBans.WhitelistMessage"));
             event.setCancelled(true);
         }
     }
@@ -107,26 +105,28 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
     {
         DeltaRedisApi api = DeltaRedisApi.instance();
         String channel = event.getChannel();
+        List<String> messageParts = event.getMessageParts();
 
         if(event.getChannel().equals(DeltaBansChannels.KICK))
         {
-            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 4);
-            String kicker = splitMessage[0];
-            String nameToKick = splitMessage[1];
-            String message = splitMessage[2];
-            boolean isSilent = splitMessage[3].equals("1");
+            String kicker = messageParts.get(0);
+            String nameToKick = messageParts.get(1);
+            String message = messageParts.get(2);
+            boolean isSilent = messageParts.get(3).equals("1");
             ProxiedPlayer playerToKick = plugin.getProxy().getPlayer(nameToKick);
 
             if(playerToKick != null)
             {
-                String kickMessage = Settings.format("KickMessageToPlayer",
+                String kickMessage = format(
+                    "DeltaBans.KickMessageToPlayer",
                     kicker,
                     nameToKick,
                     message);
                 BaseComponent[] textComponent = TextComponent.fromLegacyText(kickMessage);
                 playerToKick.disconnect(textComponent);
 
-                String announcement = Settings.format("KickMessageToAnnounce",
+                String announcement = format(
+                    "DeltaBans.KickMessageToAnnounce",
                     kicker,
                     nameToKick,
                     message);
@@ -137,16 +137,15 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                 api.sendMessageToPlayer(
                     event.getSendingServer(),
                     kicker,
-                    Settings.format("NotOnline", nameToKick));
+                    formatPlayerOffline(nameToKick));
             }
         }
         else if(channel.equals(DeltaBansChannels.BANNED))
         {
-            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 4);
-            String sender = splitMessage[0];
-            String argument = splitMessage[1];
-            boolean isIp = splitMessage[2].equals("1");
-            boolean hasExtra = splitMessage[3].equals("1");
+            String sender = messageParts.get(0);
+            String argument = messageParts.get(1);
+            boolean isIp = messageParts.get(2).equals("1");
+            boolean hasExtra = messageParts.get(3).equals("1");
             StringBuilder builder = new StringBuilder();
 
             if(isIp)
@@ -169,9 +168,8 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
         }
         else if(channel.equals(DeltaBansChannels.WHITELIST_TOGGLE))
         {
-            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 2);
-            String sender = splitMessage[0];
-            boolean enable = splitMessage[1].equals("1");
+            String sender = messageParts.get(0);
+            boolean enable = messageParts.get(1).equals("1");
 
             if(enable)
             {
@@ -179,7 +177,7 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                 api.sendMessageToPlayer(
                     event.getSendingServer(),
                     sender,
-                    Settings.format("WhitelistToggle", "enabled"));
+                    format("DeltaBans.WhitelistToggle", "enabled"));
             }
             else
             {
@@ -187,15 +185,14 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                 api.sendMessageToPlayer(
                     event.getSendingServer(),
                     sender,
-                    Settings.format("WhitelistToggle", "disabled"));
+                    format("DeltaBans.WhitelistToggle", "disabled"));
             }
         }
         else if(channel.equals(DeltaBansChannels.WHITELIST_EDIT))
         {
-            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 3);
-            String sender = splitMessage[0];
-            boolean isAdd = splitMessage[1].equals("1");
-            String name = splitMessage[2];
+            String sender = messageParts.get(0);
+            boolean isAdd = messageParts.get(1).equals("1");
+            String name = messageParts.get(2);
 
             if(isAdd)
             {
@@ -204,14 +201,14 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                     api.sendMessageToPlayer(
                         event.getSendingServer(),
                         sender,
-                        Settings.format("AddedToWhitelist", name, "normal"));
+                        format("DeltaBans.AddedToWhitelist", name, "normal"));
                 }
                 else
                 {
                     api.sendMessageToPlayer(
                         event.getSendingServer(),
                         sender,
-                        Settings.format("AlreadyInWhitelist", name, "normal"));
+                        format("DeltaBans.AlreadyInWhitelist", name, "normal"));
                 }
             }
             else
@@ -221,23 +218,22 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                     api.sendMessageToPlayer(
                         event.getSendingServer(),
                         sender,
-                        Settings.format("RemovedFromWhitelist", name, "normal"));
+                        format("DeltaBans.RemovedFromWhitelist", name, "normal"));
                 }
                 else
                 {
                     api.sendMessageToPlayer(
                         event.getSendingServer(),
                         sender,
-                        Settings.format("NotInWhitelist", name, "normal"));
+                        format("DeltaBans.NotInWhitelist", name, "normal"));
                 }
             }
         }
         else if(channel.equals(DeltaBansChannels.RANGEBAN_WHITELIST_EDIT))
         {
-            String[] splitMessage = SplitPatterns.DELTA.split(event.getMessage(), 3);
-            String sender = splitMessage[0];
-            boolean isAdd = splitMessage[1].equals("1");
-            String name = splitMessage[2];
+            String sender = messageParts.get(0);
+            boolean isAdd = messageParts.get(1).equals("1");
+            String name = messageParts.get(2);
 
             if(isAdd)
             {
@@ -246,14 +242,14 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                     api.sendMessageToPlayer(
                         event.getSendingServer(),
                         sender,
-                        Settings.format("AddedToWhitelist", name, "rangeban"));
+                        format("DeltaBans.AddedToWhitelist", name, "rangeban"));
                 }
                 else
                 {
                     api.sendMessageToPlayer(
                         event.getSendingServer(),
                         sender,
-                        Settings.format("AlreadyInWhitelist", name, "rangeban"));
+                        format("DeltaBans.AlreadyInWhitelist", name, "rangeban"));
                 }
             }
             else
@@ -263,14 +259,14 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
                     api.sendMessageToPlayer(
                         event.getSendingServer(),
                         sender,
-                        Settings.format("RemovedFromWhitelist", name, "rangeban"));
+                        format("DeltaBans.RemovedFromWhitelist", name, "rangeban"));
                 }
                 else
                 {
                     api.sendMessageToPlayer(
                         event.getSendingServer(),
                         sender,
-                        Settings.format("NotInWhitelist", name, "rangeban"));
+                        format("DeltaBans.NotInWhitelist", name, "rangeban"));
                 }
             }
         }
@@ -280,14 +276,14 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
     {
         if(isSilent)
         {
-            DeltaRedisApi.instance().sendAnnouncementToServer(
+            DeltaRedisApi.instance().sendServerAnnouncement(
                 Servers.SPIGOT,
-                Settings.format("SilentPrefix") + announcement,
+                format("DeltaBans.SilentPrefix") + announcement,
                 "DeltaBans.SeeSilent");
         }
         else
         {
-            DeltaRedisApi.instance().sendAnnouncementToServer(
+            DeltaRedisApi.instance().sendServerAnnouncement(
                 Servers.SPIGOT,
                 announcement,
                 "");
@@ -298,38 +294,34 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
     {
         if(entry == null)
         {
-            return INFO + "No ban found.";
+            return format("DeltaBans.NotFound");
         }
 
         StringBuilder builder = new StringBuilder();
-        builder.append(INFO).append("Ban for ");
 
         if(hasExtra)
         {
-            builder
-                .append(input(entry.getName()))
-                .append(" , ")
-                .append(input(entry.getIp()))
-                .append("\n");
-        }
-        else
-        {
-            builder
-                .append(input(entry.getName()))
-                .append("\n");
+            builder.append(format(
+                "DeltaBans.BanInfo.LineFormat",
+                "IP", entry.getIp()));
+            builder.append("\n");
         }
 
-        builder
-            .append("  Banner: ")
-            .append(input(entry.getBanner()))
-            .append("\n");
-        builder
-            .append("  Ban Message: ")
-            .append(input(entry.getMessage()))
-            .append("\n");
-        builder
-            .append("  Duration: ")
-            .append(input(DeltaBansUtils.formatDuration(entry.getDuration())));
+        builder.append(format(
+            "DeltaBans.BanInfo.LineFormat",
+            "Name", entry.getName()));
+        builder.append("\n");
+        builder.append(format(
+            "DeltaBans.BanInfo.LineFormat",
+            "Banner", entry.getBanner()));
+        builder.append("\n");
+        builder.append(format(
+            "DeltaBans.BanInfo.LineFormat",
+            "Ban Message", entry.getMessage()));
+        builder.append("\n");
+        builder.append(format(
+            "DeltaBans.BanInfo.LineFormat",
+            "Duration", DeltaBansUtils.formatDuration(entry.getDuration())));
 
         return builder.toString();
     }
@@ -340,20 +332,23 @@ public class GeneralListener implements Listener, Registerable, Shutdownable
 
         if(warnings == null || warnings.size() == 0)
         {
-            return INFO + "No warnings found.";
+            return format("DeltaBans.WarningInfo.NotFound");
         }
 
-        StringBuilder builder = new StringBuilder(INFO + "Warnings for " + input(name));
+        StringBuilder builder = new StringBuilder();
 
-        for(WarningEntry entry : warnings)
+        for(int i = 0; i < warnings.size(); i++)
         {
-            builder
-                .append("\n")
-                .append(" - ")
-                .append(entry.getMessage())
-                .append(" (")
-                .append(entry.getWarner())
-                .append(")");
+            WarningEntry entry = warnings.get(i);
+            builder.append(format(
+                "DeltaBans.WarningInfo.LineFormat",
+                entry.getWarner(),
+                entry.getMessage()));
+
+            if(i != warnings.size() - 1)
+            {
+                builder.append("\n");
+            }
         }
 
         return builder.toString();

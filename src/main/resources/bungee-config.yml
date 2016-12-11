@@ -50,5 +50,10 @@ Formats:
   KickMessageToPlayer: 'You have been kicked by {0} for {2}.'
   KickMessageToAnnounce: '&8[&6Kick&8]&7 &f{1}&7 was kicked by &f{0}&7 for &f{2}&7.'
 
+  BanInfo.NotFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 No bans found'
+  BanInfo.LineFormat: '&8[&6Ban Info&8]&7 {0}: &f{1}&7'
+  WarningInfo.NotFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 No warnings found'
+  WarningInfo.LineFormat: '&8[&6Warning Info&8]&7 {0}: &f{1}&7'
+
 # Used for debugging DeltaBans
-DebugMode: False
+Debug: False

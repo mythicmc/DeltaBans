@@ -17,7 +17,7 @@
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
 
 import com.gmail.tracebachi.DeltaBans.Bungee.Entries.WarningEntry;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 
 import java.util.List;
 

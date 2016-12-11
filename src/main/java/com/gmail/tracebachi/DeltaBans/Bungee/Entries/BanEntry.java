@@ -17,8 +17,6 @@
 package com.gmail.tracebachi.DeltaBans.Bungee.Entries;
 
 import com.google.common.base.Preconditions;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.

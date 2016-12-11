@@ -20,15 +20,18 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
-import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
 import java.util.List;
+
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -82,13 +85,13 @@ public class UnwarnCommand implements TabExecutor, Registerable, Shutdownable
 
         if(args.length < 1)
         {
-            sender.sendMessage(Settings.format("UnwarnUsage"));
+            sender.sendMessage(formatUsage("/unwarn <name> [amount]"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Warn"))
         {
-            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Warn"));
+            sender.sendMessage(formatNoPerm("DeltaBans.Warn"));
             return true;
         }
 

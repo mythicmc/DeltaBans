@@ -17,6 +17,7 @@
 package com.gmail.tracebachi.DeltaBans.Spigot;
 
 import com.gmail.tracebachi.DbShare.Spigot.DbShare;
+import com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper;
 import com.zaxxer.hikari.HikariDataSource;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
@@ -24,7 +25,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +40,6 @@ public class Settings
     private static String accountsTableName;
     private static String ipColumnName;
     private static String playerColumnName;
-    private static Map<String, MessageFormat> formats = new HashMap<>();
     private static Map<Integer, List<String>> warningCommands = new HashMap<>();
 
     private Settings() {}
@@ -48,9 +47,6 @@ public class Settings
     public static void read(FileConfiguration config)
     {
         ConfigurationSection section;
-
-        formats.clear();
-        warningCommands.clear();
 
         debugEnabled = config.getBoolean("DebugMode", false);
         databaseName = config.getString("Database.Name");
@@ -62,9 +58,12 @@ public class Settings
 
         for(String key : section.getKeys(false))
         {
-            String translated = ChatColor.translateAlternateColorCodes('&', section.getString(key));
-
-            formats.put(key, new MessageFormat(translated));
+            String translated = ChatColor.translateAlternateColorCodes(
+                '&',
+                section.getString(key));
+            ChatMessageHelper.instance().updateFormat(
+                "DeltaBans." + key,
+                translated);
         }
 
         section = config.getConfigurationSection("WarningCommands");
@@ -116,12 +115,6 @@ public class Settings
             "SELECT `" + ipColumnName + "` " +
             "FROM `" + accountsTableName + "` " +
             "WHERE `" + playerColumnName + "` = ?;";
-    }
-
-    public static String format(String key, String... args)
-    {
-        MessageFormat format = formats.get(key);
-        return (format == null) ? "Unknown format for: " + key : format.format(args);
     }
 
     public static List<String> getWarningCommands(int amount)

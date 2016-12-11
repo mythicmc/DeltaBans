@@ -17,7 +17,7 @@
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
 
 import com.gmail.tracebachi.DeltaBans.Bungee.Entries.RangeBanEntry;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 8/27/16.

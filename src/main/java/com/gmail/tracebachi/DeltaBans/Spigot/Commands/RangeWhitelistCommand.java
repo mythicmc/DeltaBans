@@ -20,18 +20,19 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
-import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -85,13 +86,13 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
 
         if(args.length < 2)
         {
-            sender.sendMessage(Settings.format("RangeBanWhitelistUsage"));
+            sender.sendMessage(formatUsage("/rangebanwhitelist <add|remove> <name>"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.RangeBan"))
         {
-            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.RangeBan"));
+            sender.sendMessage(formatNoPerm("DeltaBans.RangeBan"));
             return true;
         }
 
@@ -117,18 +118,9 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
         }
         else
         {
-            sender.sendMessage(Settings.format("RangeBanWhitelistUsage"));
+            sender.sendMessage(formatUsage("/rangebanwhitelist <add|remove> <name>"));
         }
 
         return true;
-    }
-
-    private String buildMessage(String senderName, String nameToUpdate, boolean isAdd)
-    {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(senderName);
-        out.writeUTF(nameToUpdate);
-        out.writeBoolean(isAdd);
-        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

@@ -30,7 +30,7 @@ import com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL.MySQLWhitelistStorage
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.RangeBanStorage;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningStorage;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WhitelistStorage;
-import com.gmail.tracebachi.DeltaRedis.Bungee.ConfigUtil;
+import com.gmail.tracebachi.DeltaRedis.Bungee.Utils.ConfigUtil;
 import io.github.kyzderp.bungeelogger.BungeeLoggerPlugin;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;

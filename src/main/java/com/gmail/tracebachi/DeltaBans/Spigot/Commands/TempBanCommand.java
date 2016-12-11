@@ -20,9 +20,9 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
-import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -31,6 +31,10 @@ import org.bukkit.command.TabExecutor;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -83,31 +87,31 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
 
         if(args.length < 2)
         {
-            sender.sendMessage(Settings.format("TempBanUsage"));
+            sender.sendMessage(formatUsage("/tempban <name|ip> <duration> [message]"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Ban"))
         {
-            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Ban"));
+            sender.sendMessage(formatNoPerm("DeltaBans.Ban"));
             return true;
         }
 
         String banner = sender.getName();
         String ip = args[0];
         String name = null;
-        String message = Settings.format("DefaultTempBanMessage");
+        String message = format("DeltaBans.DefaultTempBanMessage");
         Long duration = getDuration(args[1]);
 
         if(duration <= 0)
         {
-            sender.sendMessage(Settings.format("InvalidDuration", args[1]));
+            sender.sendMessage(format("DeltaBans.InvalidDuration", args[1]));
             return true;
         }
 
         if(banner.equalsIgnoreCase(ip))
         {
-            sender.sendMessage(Settings.format("BanSelf"));
+            sender.sendMessage(format("DeltaBans.BanSelf"));
             return true;
         }
 
@@ -118,7 +122,7 @@ public class TempBanCommand implements TabExecutor, Registerable, Shutdownable
 
             if(ip == null)
             {
-                sender.sendMessage(Settings.format("NoIpFound", name));
+                sender.sendMessage(format("DeltaBans.NoIpFound", name));
                 return true;
             }
         }

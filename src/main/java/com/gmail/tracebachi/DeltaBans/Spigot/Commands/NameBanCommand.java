@@ -20,9 +20,9 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
-import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -31,6 +31,10 @@ import org.bukkit.command.TabExecutor;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -84,29 +88,29 @@ public class NameBanCommand implements TabExecutor, Registerable, Shutdownable
 
         if(args.length < 1)
         {
-            sender.sendMessage(Settings.format("NameBanUsage"));
+            sender.sendMessage(formatUsage("/nameban <name> [message]"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Ban"))
         {
-            sender.sendMessage(Settings.format("NoPermssion", "DeltaBans.Ban"));
+            sender.sendMessage(formatNoPerm("DeltaBans.Ban"));
             return true;
         }
 
         String banner = sender.getName();
         String name = args[0];
-        String message = Settings.format("DefaultBanMessage");
+        String message = format("DeltaBans.DefaultBanMessage");
 
         if(banner.equalsIgnoreCase(name))
         {
-            sender.sendMessage(Settings.format("BanSelf"));
+            sender.sendMessage(format("DeltaBans.BanSelf"));
             return true;
         }
 
         if(DeltaBansUtils.isIp(name))
         {
-            sender.sendMessage(Settings.format("IpInNameBan"));
+            sender.sendMessage(format("DeltaBans.IpInNameBan"));
             return true;
         }
 

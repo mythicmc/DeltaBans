@@ -20,11 +20,6 @@ Formats:
   NoPermission: '&8[&c!&8] &cFailure &8[&c!&8]&7 You do not have the &f{0}&7 permission.'
   NotOnline: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not online.'
 
-  BanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /ban <name|ip> [message]'
-  UnbanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /unban <name|ip>'
-  NameBanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /nameban <name> [message]'
-  TempBanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /tempban <name|ip> <duration> [message]'
-  TempNameBanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /tempnameban <name> <duration> [message]'
   DefaultBanMessage: 'The Ban Hammer has spoken!'
   DefaultTempBanMessage: 'You have been temporarily banned from this server!'
   BanSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to ban yourself?'
@@ -33,26 +28,17 @@ Formats:
   IpInNameBan: '&8[&c!&8] &cFailure &8[&c!&8]&7 Only names can be banned with /nameban. Use /ban for IPs.'
   InvalidDuration: '&8[&c!&8] &cFailure &8[&c!&8] &7{0} is an invalid duration. Try 1s, 2m, 3h, or 4d.'
 
-  BannedUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /banned <name|ip>'
   CheckIpNotAllowed: '&8[&c!&8] &cFailure &8[&c!&8]&7 You are not allowed to check IP bans.'
 
-  KickUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /kick <name> [message]'
   KickSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to kick yourself?'
   DefaultKickMessage: 'Did I do that? :o'
 
-  RangeBanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /rangeban <ip>-<ip> [message]'
-  RangeUnbanUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /rangeunban <ip>'
-  RangeBanWhitelistUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /rangebanwhitelist <add|remove> <name>'
   DefaultRangeBanMessage: 'You have been IP range banned from this server!'
   InvalidRange: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not a valid IP range.'
   InvalidIp: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not an IP.'
 
-  WarnUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /warn <name> [message]'
-  UnwarnUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /unwarn <name> [amount]'
   DefaultWarnMessage: 'Stop that!'
   WarnSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Warning yourself? You have been warned! :)'
-
-  WhitelistUsage: '&8[&9!&8] &9Info &8[&9!&8]&7 /whitelist <on|off|add|remove> <name>'
 
 # Commands to run on a specific number of warnings
 # {name} Name of the player that was warned
@@ -80,4 +66,4 @@ WarningCommands:
   - 'tempban {name} 2d 10 warnings: {message}'
 
 # Used for debugging DeltaBans
-DebugMode: False
+Debug: False

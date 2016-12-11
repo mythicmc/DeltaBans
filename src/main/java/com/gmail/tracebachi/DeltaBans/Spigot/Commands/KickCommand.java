@@ -20,9 +20,9 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
-import com.gmail.tracebachi.DeltaRedis.Shared.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
+import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import com.gmail.tracebachi.DeltaRedis.Shared.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -31,6 +31,10 @@ import org.bukkit.command.TabExecutor;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -85,23 +89,23 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
 
         if(args.length < 1)
         {
-            sender.sendMessage(Settings.format("KickUsage"));
+            sender.sendMessage(formatUsage("/kick <name> [message]"));
             return true;
         }
 
         if(!sender.hasPermission("DeltaBans.Kick"))
         {
-            sender.sendMessage(Settings.format("NoPermission", "DeltaBans.Kick"));
+            sender.sendMessage(formatNoPerm("DeltaBans.Kick"));
             return true;
         }
 
         String kicker = sender.getName();
         String nameToKick = args[0];
-        String message = Settings.format("DefaultKickMessage");
+        String message = format("DeltaBans.DefaultKickMessage");
 
         if(kicker.equalsIgnoreCase(nameToKick))
         {
-            sender.sendMessage(Settings.format("KickSelf"));
+            sender.sendMessage(format("DeltaBans.KickSelf"));
             return true;
         }
 
