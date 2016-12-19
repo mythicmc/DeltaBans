@@ -37,8 +37,8 @@ public final class BanEntry
 
     public BanEntry(String name, String ip, String banner, String message, Long duration, Long createdAt)
     {
-        Preconditions.checkArgument(name != null || ip != null, "Name and IP were both null.");
-        Preconditions.checkNotNull(banner, "Banner was null.");
+        Preconditions.checkNotNull(banner, "banner");
+        Preconditions.checkArgument(name != null || ip != null, "name and ip are null");
 
         if(duration != null && duration <= 0)
         {
@@ -105,11 +105,5 @@ public final class BanEntry
     public long getCreatedAt()
     {
         return createdAt;
-    }
-
-    @Override
-    public String toString()
-    {
-        return name + "," + ip + "," + banner + "," + message + "," + duration + "," + createdAt;
     }
 }

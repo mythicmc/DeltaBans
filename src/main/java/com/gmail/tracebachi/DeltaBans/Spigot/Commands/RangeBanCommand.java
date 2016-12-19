@@ -16,10 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -30,19 +29,14 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
 public class RangeBanCommand implements CommandExecutor, Registerable, Shutdownable
 {
-    private static final Pattern DASH_PATTERN = Pattern.compile("-");
-
     private DeltaBans plugin;
 
     public RangeBanCommand(DeltaBans plugin)
@@ -73,15 +67,14 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
-
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
         }
 
-        if(args.length < 1)
+        if(args.length < 2)
         {
-            sender.sendMessage(formatUsage("/rangeban <ip>-<ip> [message]"));
+            sender.sendMessage(formatUsage("/rangeban <start ip> <end ip> [message]"));
             return true;
         }
 
@@ -91,54 +84,45 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
             return true;
         }
 
-        String banner = sender.getName();
-        String[] splitIpRange = DASH_PATTERN.split(args[0]);
-        String message = format("DeltaBans.DefaultRangeBanMessage");
-
-        if(splitIpRange.length != 2)
+        if(!DeltaBansUtils.isIp(args[0]))
         {
-            sender.sendMessage(format("DeltaBans.InvalidRange", args[0]));
+            sender.sendMessage(format("DeltaBans.InvalidIp", args[0]));
+            return true;
+        }
+        else if(!DeltaBansUtils.isIp(args[1]))
+        {
+            sender.sendMessage(format("DeltaBans.InvalidIp", args[1]));
             return true;
         }
 
-        if(!DeltaBansUtils.isIp(splitIpRange[0]))
-        {
-            sender.sendMessage(format("DeltaBans.InvalidIp", splitIpRange[0]));
-            return true;
-        }
-
-        if(!DeltaBansUtils.isIp(splitIpRange[1]))
-        {
-            sender.sendMessage(format("DeltaBans.InvalidIp", splitIpRange[1]));
-            return true;
-        }
-
+        String message = null;
         if(args.length > 1)
         {
-            message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+            message = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
             message = ChatColor.translateAlternateColorCodes('&', message);
         }
 
-        long firstAsLong = DeltaBansUtils.convertIpToLong(splitIpRange[0]);
-        long secondAsLong = DeltaBansUtils.convertIpToLong(splitIpRange[1]);
+        long firstAsLong = DeltaBansUtils.convertIpToLong(args[0]);
+        long secondAsLong = DeltaBansUtils.convertIpToLong(args[1]);
+        String banner = sender.getName();
+        DeltaRedisApi api = DeltaRedisApi.instance();
 
         if(firstAsLong == secondAsLong)
         {
-            sender.sendMessage(format("DeltaBans.InvalidRange", args[0]));
-            return true;
+            sender.sendMessage(format(
+                "DeltaBans.InvalidIpRange",
+                args[0],
+                args[1]));
         }
-
-        DeltaRedisApi api = DeltaRedisApi.instance();
-
-        if(firstAsLong > secondAsLong)
+        else if(firstAsLong > secondAsLong)
         {
             api.publish(
                 Servers.BUNGEECORD,
                 DeltaBansChannels.RANGE_BAN,
                 banner,
                 message,
-                splitIpRange[1],
-                splitIpRange[0],
+                args[1],
+                args[0],
                 isSilent ? "1" : "0");
         }
         else
@@ -148,8 +132,8 @@ public class RangeBanCommand implements CommandExecutor, Registerable, Shutdowna
                 DeltaBansChannels.RANGE_BAN,
                 banner,
                 message,
-                splitIpRange[0],
-                splitIpRange[1],
+                args[0],
+                args[1],
                 isSilent ? "1" : "0");
         }
 

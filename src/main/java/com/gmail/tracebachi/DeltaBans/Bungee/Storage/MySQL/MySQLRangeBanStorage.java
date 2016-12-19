@@ -20,7 +20,7 @@ import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Bungee.Entries.RangeBanEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Settings;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.RangeBanStorage;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.google.common.base.Preconditions;
 
 import java.sql.*;

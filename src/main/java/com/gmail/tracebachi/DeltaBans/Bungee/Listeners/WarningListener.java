@@ -19,7 +19,7 @@ package com.gmail.tracebachi.DeltaBans.Bungee.Listeners;
 import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Bungee.Entries.WarningEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningStorage;
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
 import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
 import com.gmail.tracebachi.DeltaRedis.Bungee.Events.DeltaRedisMessageEvent;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
@@ -44,10 +44,10 @@ public class WarningListener implements Listener, Registerable, Shutdownable
     private ScheduledTask scheduledTask;
     private DeltaBans plugin;
 
-    public WarningListener(WarningStorage warningStorage, DeltaBans plugin)
+    public WarningListener(DeltaBans plugin)
     {
         this.plugin = plugin;
-        this.warningStorage = warningStorage;
+        this.warningStorage = plugin.getWarningStorage();
     }
 
     @Override
@@ -94,66 +94,98 @@ public class WarningListener implements Listener, Registerable, Shutdownable
             String message = messageParts.get(2);
             boolean isSilent = messageParts.get(3).equals("1");
 
-            int count = warningStorage.addWarning(new WarningEntry(name, warner, message));
-
-            api.publish(
+            handleWarnDeltaRedisMessageEvent(
                 event.getSendingServer(),
-                DeltaBansChannels.WARN,
                 warner,
                 name,
                 message,
-                Integer.toHexString(count));
-
-            String announcement = format(
-                "DeltaBans.WarnAnnouncement",
-                warner,
-                name,
-                message);
-
-            if(isSilent)
-            {
-                api.sendServerAnnouncement(
-                    Servers.SPIGOT,
-                    format("DeltaBans.SilentPrefix") + announcement,
-                    "DeltaBans.SeeSilent");
-            }
-            else
-            {
-                api.sendServerAnnouncement(
-                    Servers.SPIGOT,
-                    announcement,
-                    "");
-            }
+                isSilent);
         }
         else if(channel.equalsIgnoreCase(DeltaBansChannels.UNWARN))
         {
             String warner = messageParts.get(0);
             String name = messageParts.get(1);
-            int amount = Integer.parseInt(messageParts.get(2), 16);
+            Integer amount = parseIntFromHexString(messageParts.get(2));
             boolean isSilent = messageParts.get(3).equals("1");
 
-            int amountActuallyRemoved = warningStorage.removeWarning(name, amount);
-
-            String announcement = format(
-                "DeltaBans.UnwarnAnnouncement",
+            handleUnwarnDeltaRedisMessageEvent(
                 warner,
-                String.valueOf(amountActuallyRemoved),
-                name);
+                name,
+                amount,
+                isSilent);
+        }
+    }
 
-            if(isSilent)
-            {
-                api.sendServerAnnouncement(
-                    Servers.SPIGOT,
-                    format("DeltaBans.SilentPrefix") + announcement,
-                    "DeltaBans.SeeSilent");
-            }
-            else
-            {
-                api.sendServerAnnouncement(
-                    Servers.SPIGOT,
-                    announcement,
-                    "");
-            }
+    private void handleWarnDeltaRedisMessageEvent(String sendingServer, String warner, String name,
+                                                  String message, boolean isSilent)
+    {
+        if(message == null)
+        {
+            message = format("DeltaBans.DefaultMessage.Warn");
+        }
+
+        int count = warningStorage.addWarning(new WarningEntry(name, warner, message));
+
+        DeltaRedisApi.instance().publish(
+            sendingServer,
+            DeltaBansChannels.WARN,
+            warner,
+            name,
+            message,
+            Integer.toHexString(count));
+
+        String announcement = format(
+            "DeltaBans.Announcement.Warn",
+            warner,
+            name,
+            message);
+        announce(announcement, isSilent);
+    }
+
+    private void handleUnwarnDeltaRedisMessageEvent(String warner, String name, Integer amount,
+                                                    boolean isSilent)
+    {
+        amount = (amount == null) ? 0 : amount;
+
+        int amountActuallyRemoved = warningStorage.removeWarning(name, amount);
+
+        String announcement = format(
+            "DeltaBans.Announcement.Unwarn",
+            warner,
+            String.valueOf(amountActuallyRemoved),
+            name);
+        announce(announcement, isSilent);
+    }
+
+    private void announce(String announcement, boolean isSilent)
+    {
+        if(isSilent)
+        {
+            DeltaRedisApi.instance().sendServerAnnouncement(
+                Servers.SPIGOT,
+                format("DeltaBans.SilentPrefix") + announcement,
+                "DeltaBans.SeeSilent");
+        }
+        else
+        {
+            DeltaRedisApi.instance().sendServerAnnouncement(
+                Servers.SPIGOT,
+                announcement,
+                "");
+        }
+    }
+
+    private Integer parseIntFromHexString(String input)
+    {
+        try
+        {
+            if(input.equals("")) { return null; }
+
+            return Integer.parseInt(input, 16);
+        }
+        catch(NumberFormatException e)
+        {
+            return null;
         }
     }
 }

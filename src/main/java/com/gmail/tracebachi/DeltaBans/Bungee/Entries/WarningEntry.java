@@ -35,8 +35,8 @@ public final class WarningEntry
 
     public WarningEntry(String name, String warner, String message, long createdAt)
     {
-        this.name = Preconditions.checkNotNull(name, "Name was null.").toLowerCase();
-        this.warner = Preconditions.checkNotNull(warner, "Warner was null.").toLowerCase();
+        this.name = Preconditions.checkNotNull(name, "name").toLowerCase();
+        this.warner = Preconditions.checkNotNull(warner, "warner").toLowerCase();
         this.message = message;
         this.createdAt = createdAt;
     }

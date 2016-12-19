@@ -16,10 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -30,7 +29,6 @@ import org.bukkit.command.TabExecutor;
 
 import java.util.List;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
 import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
 import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
 
@@ -78,7 +76,6 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
-
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -97,7 +94,6 @@ public class RangeWhitelistCommand implements TabExecutor, Registerable, Shutdow
         }
 
         DeltaRedisApi api = DeltaRedisApi.instance();
-
         if(args[0].equalsIgnoreCase("add"))
         {
             api.publish(

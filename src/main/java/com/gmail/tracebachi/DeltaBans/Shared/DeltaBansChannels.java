@@ -1,4 +1,4 @@
-package com.gmail.tracebachi.DeltaBans;
+package com.gmail.tracebachi.DeltaBans.Shared;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 1/14/16.
@@ -15,6 +15,5 @@ public interface DeltaBansChannels
     String WHITELIST_TOGGLE = "DB-WhitelistToggle";
     String WHITELIST_EDIT = "DB-WhitelistEdit";
     String BANNED = "DB-Banned";
-    String SAVE = "DB-Save";
     String KICK = "DB-Kick";
 }

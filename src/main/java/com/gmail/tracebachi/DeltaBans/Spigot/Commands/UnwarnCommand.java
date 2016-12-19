@@ -16,10 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -77,7 +76,6 @@ public class UnwarnCommand implements TabExecutor, Registerable, Shutdownable
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
-
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -95,16 +93,15 @@ public class UnwarnCommand implements TabExecutor, Registerable, Shutdownable
             return true;
         }
 
-        String warner = sender.getName();
-        String name = args[0];
         Integer amount = 1;
-
         if(args.length >= 2)
         {
             amount = parseInt(args[1]);
             amount = (amount == null) ? 1 : amount;
         }
 
+        String warner = sender.getName();
+        String name = args[0];
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.UNWARN,

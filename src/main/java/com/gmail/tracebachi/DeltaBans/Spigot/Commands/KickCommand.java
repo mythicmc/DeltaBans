@@ -16,10 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -32,9 +31,7 @@ import org.bukkit.command.TabExecutor;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -81,7 +78,6 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
-
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -101,14 +97,13 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
 
         String kicker = sender.getName();
         String nameToKick = args[0];
-        String message = format("DeltaBans.DefaultKickMessage");
-
         if(kicker.equalsIgnoreCase(nameToKick))
         {
-            sender.sendMessage(format("DeltaBans.KickSelf"));
+            sender.sendMessage(format("DeltaBans.NotAllowedToSelf", "kick"));
             return true;
         }
 
+        String message = null;
         if(args.length > 1)
         {
             message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
@@ -120,7 +115,7 @@ public class KickCommand implements TabExecutor, Registerable, Shutdownable
             DeltaBansChannels.KICK,
             kicker,
             nameToKick,
-            message,
+            message == null ? "" : message,
             isSilent ? "1" : "0");
         return true;
     }

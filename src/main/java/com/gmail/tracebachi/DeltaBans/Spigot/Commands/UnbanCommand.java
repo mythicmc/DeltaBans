@@ -16,10 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -28,9 +27,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -86,10 +83,9 @@ public class UnbanCommand implements CommandExecutor, Registerable, Shutdownable
 
         String senderName = sender.getName();
         String banee = args[0];
-
         if(banee.equals(senderName))
         {
-            sender.sendMessage(format("DeltaBans.UnbanSelf"));
+            sender.sendMessage(format("DeltaBans.NotAllowedOnSelf", "unban"));
             return true;
         }
 

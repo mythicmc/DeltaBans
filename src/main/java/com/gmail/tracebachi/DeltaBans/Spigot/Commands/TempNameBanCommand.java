@@ -16,10 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -32,9 +31,7 @@ import org.bukkit.command.TabExecutor;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -99,18 +96,9 @@ public class TempNameBanCommand implements TabExecutor, Registerable, Shutdownab
 
         String banner = sender.getName();
         String name = args[0];
-        String message = format("DeltaBans.DefaultTempBanMessage");
-        Long duration = getDuration(args[1]);
-
-        if(duration <= 0)
-        {
-            sender.sendMessage(format("DeltaBans.InvalidDuration", args[1]));
-            return true;
-        }
-
         if(banner.equalsIgnoreCase(name))
         {
-            sender.sendMessage(format("DeltaBans.BanSelf"));
+            sender.sendMessage(format("DeltaBans.NotAllowedOnSelf", "tempnameban"));
             return true;
         }
 
@@ -120,6 +108,14 @@ public class TempNameBanCommand implements TabExecutor, Registerable, Shutdownab
             return true;
         }
 
+        Long duration = getDuration(args[1]);
+        if(duration <= 0)
+        {
+            sender.sendMessage(format("DeltaBans.InvalidDuration", args[1]));
+            return true;
+        }
+
+        String message = null;
         if(args.length > 2)
         {
             message = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
@@ -132,7 +128,7 @@ public class TempNameBanCommand implements TabExecutor, Registerable, Shutdownab
             name,
             "",
             banner,
-            message,
+            message == null ? "" : message,
             Long.toHexString(duration * 1000),
             isSilent ? "1" : "0");
         return true;

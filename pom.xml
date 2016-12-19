@@ -6,7 +6,7 @@
 
     <groupId>com.gmail.tracebachi</groupId>
     <artifactId>DeltaBans</artifactId>
-    <version>1.8.5</version>
+    <version>1.9.0</version>
 
     <repositories>
         <repository>

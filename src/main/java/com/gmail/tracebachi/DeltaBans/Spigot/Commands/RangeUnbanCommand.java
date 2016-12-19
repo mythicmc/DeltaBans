@@ -16,10 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -28,9 +27,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -67,7 +64,6 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable, Shutdow
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
-
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -85,15 +81,14 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable, Shutdow
             return true;
         }
 
-        String banner = sender.getName();
         String ip = args[0];
-
         if(!DeltaBansUtils.isIp(ip))
         {
             sender.sendMessage(format("DeltaBans.InvalidIp", args[0]));
             return true;
         }
 
+        String banner = sender.getName();
         DeltaRedisApi.instance().publish(
             Servers.BUNGEECORD,
             DeltaBansChannels.RANGE_UNBAN,

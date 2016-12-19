@@ -16,9 +16,7 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.BanListener;
-import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.GeneralListener;
-import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.WarningListener;
+import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.*;
 import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.BungeeLoggerLogger;
 import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.DeltaBansLogger;
 import com.gmail.tracebachi.DeltaBans.Bungee.Loggers.JavaLoggingLogger;
@@ -51,14 +49,16 @@ public class DeltaBans extends Plugin
     private Configuration config;
     private DeltaBansLogger logger;
 
-    private GeneralListener generalListener;
+    private BanAndWarningInfoListener banAndWarningInfoListener;
     private BanListener banListener;
+    private KickListener kickListener;
     private WarningListener warningListener;
-    private WhitelistStorage whitelistStorage;
+    private WhitelistListener whitelistListener;
 
     private BanStorage banStorage;
     private WarningStorage warningStorage;
     private RangeBanStorage rangeBanStorage;
+    private WhitelistStorage whitelistStorage;
 
     @Override
     public void onEnable()
@@ -128,14 +128,20 @@ public class DeltaBans extends Plugin
             return;
         }
 
+        banAndWarningInfoListener = new BanAndWarningInfoListener(this);
+        banAndWarningInfoListener.register();
+
         banListener = new BanListener(this);
         banListener.register();
 
-        warningListener = new WarningListener(warningStorage, this);
+        kickListener = new KickListener(this);
+        kickListener.register();
+
+        warningListener = new WarningListener(this);
         warningListener.register();
 
-        generalListener = new GeneralListener(this);
-        generalListener.register();
+        whitelistListener = new WhitelistListener(this);
+        whitelistListener.register();
     }
 
     @Override
@@ -143,10 +149,10 @@ public class DeltaBans extends Plugin
     {
         getProxy().getScheduler().cancel(this);
 
-        if(generalListener != null)
+        if(whitelistListener != null)
         {
-            generalListener.shutdown();
-            generalListener = null;
+            whitelistListener.shutdown();
+            whitelistListener = null;
         }
 
         if(warningListener != null)
@@ -155,10 +161,46 @@ public class DeltaBans extends Plugin
             warningListener = null;
         }
 
+        if(kickListener != null)
+        {
+            kickListener.shutdown();
+            kickListener = null;
+        }
+
         if(banListener != null)
         {
             banListener.shutdown();
             banListener = null;
+        }
+
+        if(banAndWarningInfoListener != null)
+        {
+            banAndWarningInfoListener.shutdown();
+            banAndWarningInfoListener = null;
+        }
+
+        if(banStorage != null)
+        {
+            banStorage.shutdown();
+            banStorage = null;
+        }
+
+        if(rangeBanStorage != null)
+        {
+            rangeBanStorage.shutdown();
+            rangeBanStorage = null;
+        }
+
+        if(warningStorage != null)
+        {
+            warningStorage.shutdown();
+            warningStorage = null;
+        }
+
+        if(whitelistStorage != null)
+        {
+            whitelistStorage.shutdown();
+            whitelistStorage = null;
         }
     }
 

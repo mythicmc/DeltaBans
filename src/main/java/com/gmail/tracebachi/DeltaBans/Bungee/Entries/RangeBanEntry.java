@@ -16,10 +16,8 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Entries;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.google.common.base.Preconditions;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -39,14 +37,15 @@ public final class RangeBanEntry
         this(banner, message, startAddress, endAddress, System.currentTimeMillis());
     }
 
-    public RangeBanEntry(String banner, String message, String startAddress, String endAddress, long createdAt)
+    public RangeBanEntry(String banner, String message, String startAddress, String endAddress,
+                         long createdAt)
     {
-        Preconditions.checkNotNull(banner, "Banner cannot be null");
-        Preconditions.checkNotNull(message, "Message cannot be null");
-        Preconditions.checkNotNull(startAddress, "Start address cannot be null");
-        Preconditions.checkNotNull(endAddress, "End address cannot be null");
-        Preconditions.checkArgument(DeltaBansUtils.isIp(startAddress), "Start address is not an IP.");
-        Preconditions.checkArgument(DeltaBansUtils.isIp(endAddress), "End address is not an IP.");
+        Preconditions.checkNotNull(banner, "banner");
+        Preconditions.checkNotNull(message, "message");
+        Preconditions.checkNotNull(startAddress, "startAddress");
+        Preconditions.checkNotNull(endAddress, "endAddress");
+        Preconditions.checkArgument(DeltaBansUtils.isIp(startAddress), "Non-IP startAddress");
+        Preconditions.checkArgument(DeltaBansUtils.isIp(endAddress), "Non-IP endAddress");
 
         this.banner = banner;
         this.message = message;
@@ -90,38 +89,5 @@ public final class RangeBanEntry
     public long getCreatedAt()
     {
         return createdAt;
-    }
-
-    public static RangeBanEntry fromJson(JsonObject object)
-    {
-        JsonElement banner = object.get("banner");
-        JsonElement message = object.get("message");
-        JsonElement startAddress = object.get("start_address");
-        JsonElement endAddress = object.get("end_address");
-        JsonElement createdAt = object.get("created_at");
-
-        if(message == null || startAddress == null || endAddress == null)
-        {
-            throw new IllegalArgumentException("Warning is not properly formatted:\n" +
-                object.toString());
-        }
-
-        return new RangeBanEntry(
-            banner.getAsString(),
-            message.getAsString(),
-            startAddress.getAsString(),
-            endAddress.getAsString(),
-            (createdAt == null) ? System.currentTimeMillis() : createdAt.getAsLong());
-    }
-
-    public JsonObject toJson()
-    {
-        JsonObject object = new JsonObject();
-        object.addProperty("banner", banner);
-        object.addProperty("message", message);
-        object.addProperty("start_address", startAddress);
-        object.addProperty("end_address", endAddress);
-        object.addProperty("created_at", createdAt);
-        return object;
     }
 }

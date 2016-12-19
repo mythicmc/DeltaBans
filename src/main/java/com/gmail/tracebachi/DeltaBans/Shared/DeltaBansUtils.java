@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.gmail.tracebachi.DeltaBans;
+package com.gmail.tracebachi.DeltaBans.Shared;
 
 import java.util.regex.Pattern;
 

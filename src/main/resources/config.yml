@@ -17,28 +17,14 @@ Database:
 # Formatting
 Formats:
 
-  NoPermission: '&8[&c!&8] &cFailure &8[&c!&8]&7 You do not have the &f{0}&7 permission.'
-  NotOnline: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not online.'
+  NotAllowedToSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to {0} yourself?'
 
-  DefaultBanMessage: 'The Ban Hammer has spoken!'
-  DefaultTempBanMessage: 'You have been temporarily banned from this server!'
-  BanSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to ban yourself?'
-  UnbanSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 You are already unbanned.'
-  NoIpFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 There is no IP information for &f{0}&7. But they can still be banned with /nameban'
-  IpInNameBan: '&8[&c!&8] &cFailure &8[&c!&8]&7 Only names can be banned with /nameban. Use /ban for IPs.'
-  InvalidDuration: '&8[&c!&8] &cFailure &8[&c!&8] &7{0} is an invalid duration. Try 1s, 2m, 3h, or 4d.'
+  NoIpFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 There is no IP information for &f{0}&7, but they can still be banned with /nameban'
+  IpInNameBan: '&8[&c!&8] &cFailure &8[&c!&8]&7 Use /ban for IP bans'
+  InvalidDuration: '&8[&c!&8] &cFailure &8[&c!&8] &7{0} is an invalid duration (ex. 1s, 2m, 3h, 4d)'
 
-  CheckIpNotAllowed: '&8[&c!&8] &cFailure &8[&c!&8]&7 You are not allowed to check IP bans.'
-
-  KickSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to kick yourself?'
-  DefaultKickMessage: 'Did I do that? :o'
-
-  DefaultRangeBanMessage: 'You have been IP range banned from this server!'
-  InvalidRange: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not a valid IP range.'
   InvalidIp: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not an IP.'
-
-  DefaultWarnMessage: 'Stop that!'
-  WarnSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Warning yourself? You have been warned! :)'
+  InvalidIpRange: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7-&f{1}&7 is not a valid IP range.'
 
 # Commands to run on a specific number of warnings
 # {name} Name of the player that was warned

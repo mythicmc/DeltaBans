@@ -16,10 +16,9 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
 import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
@@ -30,9 +29,7 @@ import org.bukkit.command.TabExecutor;
 
 import java.util.List;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
@@ -68,8 +65,8 @@ public class BannedCommand implements TabExecutor, Registerable, Shutdownable
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s,
-                                      String[] args)
+    public List<String> onTabComplete(CommandSender sender, Command command,
+                                      String s, String[] args)
     {
         String lastArg = args[args.length - 1];
         return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
@@ -90,12 +87,12 @@ public class BannedCommand implements TabExecutor, Registerable, Shutdownable
             return true;
         }
 
-        boolean hasExtraPerm = sender.hasPermission("DeltaBans.CheckBan.Extra");
+        boolean hasExtraPerm = sender.hasPermission("DeltaBans.CheckBan.IncludeIp");
         boolean isIp = DeltaBansUtils.isIp(args[0]);
 
         if(isIp && !hasExtraPerm)
         {
-            sender.sendMessage(format("DeltaBans.CheckIpNotAllowed"));
+            sender.sendMessage(formatNoPerm("DeltaBans.CheckBan.IncludeIp"));
             return true;
         }
 

@@ -16,8 +16,8 @@
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
+import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
 import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
@@ -39,17 +39,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatNoPerm;
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.formatUsage;
+import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
 
 /**
  * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
  */
 public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdownable
 {
-    private static final Pattern NAME_PATTERN = Pattern.compile("\\{name\\}");
-    private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message\\}");
+    private static final Pattern NAME_PATTERN = Pattern.compile("\\{name}");
+    private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message}");
 
     private DeltaBans plugin;
 
@@ -92,7 +90,6 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
         boolean isSilent = DeltaBansUtils.isSilent(args);
-
         if(isSilent)
         {
             args = DeltaBansUtils.filterSilent(args);
@@ -112,14 +109,13 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
 
         String warner = sender.getName();
         String name = args[0];
-        String message = format("DeltaBans.DefaultWarnMessage");
-
         if(name.equalsIgnoreCase(warner))
         {
-            sender.sendMessage(format("DeltaBans.WarnSelf"));
+            sender.sendMessage(format("DeltaBans.NotAllowedToSelf", "warn"));
             return true;
         }
 
+        String message = null;
         if(args.length > 1)
         {
             message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
@@ -131,7 +127,7 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
             DeltaBansChannels.WARN,
             warner,
             name,
-            message,
+            message == null ? "" : message,
             isSilent ? "1" : "0");
         return true;
     }
@@ -148,8 +144,7 @@ public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdow
             Integer amount = Integer.parseInt(messageParts.get(3), 16);
 
             Player player = Bukkit.getPlayerExact(senderName);
-
-            if(player != null && player.isOnline())
+            if(player != null)
             {
                 boolean wasOp = player.isOp();
                 player.setOp(true);
