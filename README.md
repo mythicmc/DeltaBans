@@ -1,9 +1,12 @@
 # DeltaBans
-DeltaBans is a banning plugin for BungeeCord-linked servers. To function properly, it must be
-installed on BungeeCord and servers connected to that BungeeCord instance.
-
-All bans are stored in a JSON file in `BungeeCord/plugins/DeltaBans/bans.json`. DeltaBans
-uses DeltaRedis for communication and xAuth for player IP information.
+DeltaBans is a banning plugin for Spigot/Bungeecord servers. All bans, warnings,
+rangebans, and whitelist are stored in a MySQL database.
+ 
+# Requirements
+- BungeeCord and Spigot servers
+- xAuth or similar MySQL based plugin that contains username and IP information
+- [DeltaRedis](https://github.com/GeeItsZee/DeltaRedis)
+- [DbShare](https://github.com/GeeItsZee/DbShare)
 
 # Licence ([GPLv3](http://www.gnu.org/licenses/gpl-3.0.en.html))
 ```
