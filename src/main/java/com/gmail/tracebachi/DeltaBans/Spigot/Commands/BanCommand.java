@@ -1,28 +1,32 @@
 /*
- * This file is part of DeltaBans.
+ * DeltaBans - Ban and warning plugin for BungeeCord and Spigot servers
+ * Copyright (C) 2017 tracebachi@gmail.com (GeeItsZee)
  *
- * DeltaBans is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * DeltaBans is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
-import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
-import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
-import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
+import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Channels;
+import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Formats;
+import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
+import com.gmail.tracebachi.SockExchange.Spigot.SockExchangeApi;
+import com.gmail.tracebachi.SockExchange.Utilities.MessageFormatMap;
+import com.gmail.tracebachi.SockExchange.Utilities.Registerable;
+import com.google.common.base.Preconditions;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -31,107 +35,128 @@ import org.bukkit.command.TabExecutor;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
-
 /**
- * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
+ * @author GeeItsZee (tracebachi@gmail.com)
  */
-public class BanCommand implements TabExecutor, Registerable, Shutdownable
+public class BanCommand implements TabExecutor, Registerable
 {
-    private DeltaBans plugin;
+  private static final String COMMAND_NAME = "ban";
+  private static final String COMMAND_USAGE = "/ban <name|ip> [message]";
+  private static final String COMMAND_PERM = "DeltaBans.Ban";
+  private static final String NAME_ONLY_FLAG = "-name";
 
-    public BanCommand(DeltaBans plugin)
+  private final DeltaBansPlugin plugin;
+  private final SockExchangeApi api;
+  private final MessageFormatMap formatMap;
+
+  public BanCommand(DeltaBansPlugin plugin, SockExchangeApi api, MessageFormatMap formatMap)
+  {
+    Preconditions.checkNotNull(plugin, "plugin");
+    Preconditions.checkNotNull(api, "api");
+    Preconditions.checkNotNull(formatMap, "formatMap");
+
+    this.plugin = plugin;
+    this.api = api;
+    this.formatMap = formatMap;
+  }
+
+  @Override
+  public void register()
+  {
+    plugin.getCommand(COMMAND_NAME).setExecutor(this);
+    plugin.getCommand(COMMAND_NAME).setTabCompleter(this);
+  }
+
+  @Override
+  public void unregister()
+  {
+    plugin.getCommand(COMMAND_NAME).setExecutor(null);
+    plugin.getCommand(COMMAND_NAME).setTabCompleter(null);
+  }
+
+  @Override
+  public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+  {
+    return TabCompleteNameHelper.getNamesThatStartsWith(args[args.length - 1], api);
+  }
+
+  @Override
+  public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+  {
+    boolean isSilent = DeltaBansUtils.isSilent(args);
+    if (isSilent)
     {
-        this.plugin = plugin;
+      args = DeltaBansUtils.filterSilent(args);
     }
 
-    @Override
-    public void register()
+    boolean isNameOnly = DeltaBansUtils.hasFlag(args, NAME_ONLY_FLAG);
+    if (isNameOnly)
     {
-        plugin.getCommand("ban").setExecutor(this);
-        plugin.getCommand("ban").setTabCompleter(this);
+      args = DeltaBansUtils.filterFlag(args, NAME_ONLY_FLAG);
     }
 
-    @Override
-    public void unregister()
+    if (args.length < 1)
     {
-        plugin.getCommand("ban").setExecutor(null);
-        plugin.getCommand("ban").setTabCompleter(null);
+      sender.sendMessage(formatMap.format(Formats.USAGE, COMMAND_USAGE));
+      return true;
     }
 
-    @Override
-    public void shutdown()
+    if (!sender.hasPermission(COMMAND_PERM))
     {
-        unregister();
-        plugin = null;
+      sender.sendMessage(formatMap.format(Formats.NO_PERM, COMMAND_PERM));
+      return true;
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command,
-                                      String s, String[] args)
+    String banner = sender.getName();
+    String nameOrIp = args[0];
+
+    if (banner.equalsIgnoreCase(nameOrIp))
     {
-        String lastArg = args[args.length - 1];
-        return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
+      sender.sendMessage(formatMap.format(Formats.NOT_ALLOWED_ON_SELF, COMMAND_NAME));
+      return true;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    String name = "";
+    String ip = nameOrIp;
+
+    // If a name-only ban is requested, assume the input to be the name and clear the IP.
+    if (isNameOnly)
     {
-        boolean isSilent = DeltaBansUtils.isSilent(args);
-        if(isSilent)
-        {
-            args = DeltaBansUtils.filterSilent(args);
-        }
-
-        if(args.length < 1)
-        {
-            sender.sendMessage(formatUsage("/ban <name|ip> [message]"));
-            return true;
-        }
-
-        if(!sender.hasPermission("DeltaBans.Ban"))
-        {
-            sender.sendMessage(formatNoPerm("DeltaBans.Ban"));
-            return true;
-        }
-
-        String banner = sender.getName();
-        String ip = args[0];
-        if(banner.equalsIgnoreCase(ip))
-        {
-            sender.sendMessage(format("DeltaBans.NotAllowedToSelf", "ban"));
-            return true;
-        }
-
-        String name = null;
-        if(!DeltaBansUtils.isIp(ip))
-        {
-            name = ip;
-            ip = plugin.getIpOfPlayer(name);
-
-            if(ip == null)
-            {
-                sender.sendMessage(format("DeltaBans.NoIpFound", name));
-                return true;
-            }
-        }
-
-        String message = null;
-        if(args.length > 1)
-        {
-            message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-            message = ChatColor.translateAlternateColorCodes('&', message);
-        }
-
-        DeltaRedisApi.instance().publish(
-            Servers.BUNGEECORD,
-            DeltaBansChannels.BAN,
-            name == null ? "" : name,
-            ip == null ? "" : ip,
-            banner,
-            message == null ? "" : message,
-            "",
-            isSilent ? "1" : "0");
-        return true;
+      name = nameOrIp;
+      ip = "";
     }
+    // If the nameOrIp is not an IP, assume the input is a name and try to look up the IP.
+    else if (!DeltaBansUtils.isIp(nameOrIp))
+    {
+      name = nameOrIp;
+      ip = plugin.getIpOfPlayer(name);
+
+      // Tell the sender if the IP could not be found
+      if (ip.equals(""))
+      {
+        sender.sendMessage(formatMap.format(Formats.NO_IP_FOUND, name));
+      }
+    }
+
+    String message = "";
+
+    // Build the ban message from the rest of the arguments
+    if (args.length > 1)
+    {
+      message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+      message = ChatColor.translateAlternateColorCodes('&', message);
+    }
+
+    ByteArrayDataOutput out = ByteStreams.newDataOutput(256);
+    out.writeUTF(api.getServerName());
+    out.writeUTF(name);
+    out.writeUTF(ip);
+    out.writeUTF(banner);
+    out.writeUTF(message);
+    out.writeBoolean(false); // Duration = Permanent
+    out.writeBoolean(isSilent);
+
+    api.sendToBungee(Channels.BAN, out.toByteArray());
+    return true;
+  }
 }

@@ -1,227 +1,183 @@
 /*
- * This file is part of DeltaBans.
+ * DeltaBans - Ban and warning plugin for BungeeCord and Spigot servers
+ * Copyright (C) 2017 tracebachi@gmail.com (GeeItsZee)
  *
- * DeltaBans is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * DeltaBans is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Listeners;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Bungee.Settings;
+import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPlugin;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WhitelistStorage;
-import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
-import com.gmail.tracebachi.DeltaRedis.Bungee.Events.DeltaRedisMessageEvent;
-import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
-import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
+import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Channels;
+import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Formats;
+import com.gmail.tracebachi.SockExchange.Bungee.SockExchangeApi;
+import com.gmail.tracebachi.SockExchange.Messages.ReceivedMessage;
+import com.gmail.tracebachi.SockExchange.Messages.ReceivedMessageNotifier;
+import com.gmail.tracebachi.SockExchange.Utilities.MessageFormatMap;
+import com.gmail.tracebachi.SockExchange.Utilities.Registerable;
+import com.google.common.base.Preconditions;
+import com.google.common.io.ByteArrayDataInput;
 import net.md_5.bungee.api.connection.PendingConnection;
 import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-import java.util.List;
-
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
+import java.util.Collections;
+import java.util.function.Consumer;
 
 /**
- * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/18/16.
+ * @author GeeItsZee (tracebachi@gmail.com)
  */
-public class WhitelistListener implements Listener, Registerable, Shutdownable
+public class WhitelistListener implements Listener, Registerable
 {
-    private boolean whitelistEnabled;
-    private WhitelistStorage whitelistStorage;
-    private DeltaBans plugin;
+  private final DeltaBansPlugin plugin;
+  private final WhitelistStorage whitelistStorage;
+  private final SockExchangeApi api;
+  private final MessageFormatMap formatMap;
+  private final Consumer<ReceivedMessage> whitelistEditChannelListener;
+  private final Consumer<ReceivedMessage> whitelistToggleChannelListener;
+  private boolean whitelistEnabled;
 
-    public WhitelistListener(DeltaBans plugin)
+  public WhitelistListener(
+    DeltaBansPlugin plugin, WhitelistStorage whitelistStorage, SockExchangeApi api,
+    MessageFormatMap formatMap, boolean shouldStartWithWhitelist)
+  {
+    Preconditions.checkNotNull(plugin, "plugin");
+    Preconditions.checkNotNull(whitelistStorage, "whitelistStorage");
+    Preconditions.checkNotNull(api, "api");
+    Preconditions.checkNotNull(formatMap, "formatMap");
+
+    this.plugin = plugin;
+    this.whitelistStorage = whitelistStorage;
+    this.api = api;
+    this.formatMap = formatMap;
+    this.whitelistEditChannelListener = this::onWhitelistEditChannelRequest;
+    this.whitelistToggleChannelListener = this::onWhitelistToggleChannelRequest;
+    this.whitelistEnabled = shouldStartWithWhitelist;
+  }
+
+  @Override
+  public void register()
+  {
+    plugin.getProxy().getPluginManager().registerListener(plugin, this);
+
+    ReceivedMessageNotifier messageNotifier = api.getMessageNotifier();
+    messageNotifier.register(Channels.WHITELIST_EDIT, whitelistEditChannelListener);
+    messageNotifier.register(Channels.WHITELIST_TOGGLE, whitelistToggleChannelListener);
+  }
+
+  @Override
+  public void unregister()
+  {
+    plugin.getProxy().getPluginManager().unregisterListener(this);
+
+    ReceivedMessageNotifier messageNotifier = api.getMessageNotifier();
+    messageNotifier.unregister(Channels.WHITELIST_EDIT, whitelistEditChannelListener);
+    messageNotifier.unregister(Channels.WHITELIST_TOGGLE, whitelistToggleChannelListener);
+  }
+
+  @EventHandler(priority = EventPriority.LOW)
+  public void onLogin(LoginEvent event)
+  {
+    if (event.isCancelled())
     {
-        this.plugin = plugin;
-        this.whitelistStorage = plugin.getWhitelistStorage();
-        this.whitelistEnabled = Settings.shouldStartWithWhitelistEnabled();
+      return;
     }
 
-    @Override
-    public void register()
+    PendingConnection pending = event.getConnection();
+    String playerName = pending.getName();
+
+    if (whitelistEnabled && !whitelistStorage.isOnNormalWhitelist(playerName))
     {
-        plugin.getProxy().getPluginManager().registerListener(plugin, this);
+      event.setCancelReason(formatMap.format(Formats.SERVER_IN_WHITELIST_MODE));
+      event.setCancelled(true);
     }
+  }
 
-    @Override
-    public void unregister()
+  private void onWhitelistEditChannelRequest(ReceivedMessage message)
+  {
+    ByteArrayDataInput in = message.getDataInput();
+    String sendingServer = in.readUTF();
+    String sender = in.readUTF();
+    String whitelistType = in.readUTF().toLowerCase();
+    String nameToEdit = in.readUTF();
+    boolean isAdd = in.readBoolean();
+
+    if (whitelistType.equals("normal"))
     {
-        plugin.getProxy().getPluginManager().unregisterListener(this);
-    }
+      if (isAdd)
+      {
+        whitelistStorage.addToNormalWhitelist(nameToEdit);
 
-    @Override
-    public void shutdown()
+        String chatMessage = formatMap.format(
+          Formats.ADDED_TO_WHITELIST, nameToEdit, whitelistType);
+        sendChatMessage(chatMessage, sender, sendingServer);
+      }
+      else
+      {
+        whitelistStorage.removeFromNormalWhitelist(nameToEdit);
+
+        String chatMessage = formatMap.format(
+          Formats.REMOVED_FROM_WHITELIST, nameToEdit, whitelistType);
+        sendChatMessage(chatMessage, sender, sendingServer);
+      }
+    }
+    else if (whitelistType.equals("rangeban"))
     {
-        unregister();
-        whitelistStorage = null;
-        plugin = null;
-    }
+      if (isAdd)
+      {
+        whitelistStorage.addToRangeBanWhitelist(nameToEdit);
 
-    @EventHandler(priority = EventPriority.LOW)
-    public void onLogin(LoginEvent event)
+        String chatMessage = formatMap.format(
+          Formats.ADDED_TO_WHITELIST, nameToEdit, whitelistType);
+        sendChatMessage(chatMessage, sender, sendingServer);
+      }
+      else
+      {
+        whitelistStorage.removeFromRangeBanWhitelist(nameToEdit);
+
+        String chatMessage = formatMap.format(
+          Formats.REMOVED_FROM_WHITELIST, nameToEdit, whitelistType);
+        sendChatMessage(chatMessage, sender, sendingServer);
+      }
+    }
+  }
+
+  private void onWhitelistToggleChannelRequest(ReceivedMessage receivedMessage)
+  {
+    ByteArrayDataInput in = receivedMessage.getDataInput();
+    String sendingServer = in.readUTF();
+    String sender = in.readUTF();
+    boolean enable = in.readBoolean();
+
+    if (enable)
     {
-        PendingConnection pending = event.getConnection();
-        String playerName = pending.getName();
-
-        if(whitelistEnabled && !whitelistStorage.isOnNormalWhitelist(playerName))
-        {
-            event.setCancelReason(format("DeltaBans.WhitelistMessage"));
-            event.setCancelled(true);
-        }
+      whitelistEnabled = true;
+      sendChatMessage(
+        formatMap.format(Formats.WHITELIST_TOGGLED, "enabled"), sender, sendingServer);
     }
-
-    @EventHandler
-    public void onRedisMessage(DeltaRedisMessageEvent event)
+    else
     {
-        String channel = event.getChannel();
-        List<String> messageParts = event.getMessageParts();
-
-        if(channel.equals(DeltaBansChannels.WHITELIST_TOGGLE))
-        {
-            String sender = messageParts.get(0);
-            boolean enable = messageParts.get(1).equals("1");
-
-            handleWhitelistToggleDeltaRedisMessageEvent(
-                event.getSendingServer(),
-                sender,
-                enable);
-        }
-        else if(channel.equals(DeltaBansChannels.WHITELIST_EDIT))
-        {
-            String sender = messageParts.get(0);
-            String name = messageParts.get(1);
-            boolean isAdd = messageParts.get(2).equals("1");
-
-            handleWhitelistEditDeltaRedisMessageEvent(
-                event.getSendingServer(),
-                sender,
-                isAdd,
-                name);
-        }
-        else if(channel.equals(DeltaBansChannels.RANGEBAN_WHITELIST_EDIT))
-        {
-            String sender = messageParts.get(0);
-            String name = messageParts.get(1);
-            boolean isAdd = messageParts.get(2).equals("1");
-
-            handleRangeBanWhitelistEditDeltaRedisMessageEvent(
-                event.getSendingServer(),
-                sender,
-                isAdd,
-                name);
-        }
+      whitelistEnabled = false;
+      sendChatMessage(
+        formatMap.format(Formats.WHITELIST_TOGGLED, "disabled"), sender, sendingServer);
     }
+  }
 
-    private void handleRangeBanWhitelistEditDeltaRedisMessageEvent(String sendingServer,
-                                                                   String sender, boolean isAdd,
-                                                                   String name)
-    {
-        if(isAdd)
-        {
-            if(whitelistStorage.addToRangeBanWhitelist(name))
-            {
-                DeltaRedisApi.instance().sendMessageToPlayer(
-                    sendingServer,
-                    sender,
-                    format("DeltaBans.AddedToWhitelist", name, "rangeban"));
-            }
-            else
-            {
-                DeltaRedisApi.instance().sendMessageToPlayer(
-                    sendingServer,
-                    sender,
-                    format("DeltaBans.AlreadyInWhitelist", name, "rangeban"));
-            }
-        }
-        else
-        {
-            if(whitelistStorage.removeFromRangeBanWhitelist(name))
-            {
-                DeltaRedisApi.instance().sendMessageToPlayer(
-                    sendingServer,
-                    sender,
-                    format("DeltaBans.RemovedFromWhitelist", name, "rangeban"));
-            }
-            else
-            {
-                DeltaRedisApi.instance().sendMessageToPlayer(
-                    sendingServer,
-                    sender,
-                    format("DeltaBans.NotInWhitelist", name, "rangeban"));
-            }
-        }
-    }
-
-    private void handleWhitelistEditDeltaRedisMessageEvent(String sendingServer, String sender,
-                                                           boolean isAdd, String name)
-    {
-        if(isAdd)
-        {
-            if(whitelistStorage.addToNormalWhitelist(name))
-            {
-                DeltaRedisApi.instance().sendMessageToPlayer(
-                    sendingServer,
-                    sender,
-                    format("DeltaBans.AddedToWhitelist", name, "normal"));
-            }
-            else
-            {
-                DeltaRedisApi.instance().sendMessageToPlayer(
-                    sendingServer,
-                    sender,
-                    format("DeltaBans.AlreadyInWhitelist", name, "normal"));
-            }
-        }
-        else
-        {
-            if(whitelistStorage.removeFromNormalWhitelist(name))
-            {
-                DeltaRedisApi.instance().sendMessageToPlayer(
-                    sendingServer,
-                    sender,
-                    format("DeltaBans.RemovedFromWhitelist", name, "normal"));
-            }
-            else
-            {
-                DeltaRedisApi.instance().sendMessageToPlayer(
-                    sendingServer,
-                    sender,
-                    format("DeltaBans.NotInWhitelist", name, "normal"));
-            }
-        }
-    }
-
-    private void handleWhitelistToggleDeltaRedisMessageEvent(String sendingServer, String sender,
-                                                             boolean enable)
-    {
-        if(enable)
-        {
-            whitelistEnabled = true;
-            DeltaRedisApi.instance().sendMessageToPlayer(
-                sendingServer,
-                sender,
-                format("DeltaBans.WhitelistToggle", "enabled"));
-        }
-        else
-        {
-            whitelistEnabled = false;
-            DeltaRedisApi.instance().sendMessageToPlayer(
-                sendingServer,
-                sender,
-                format("DeltaBans.WhitelistToggle", "disabled"));
-        }
-    }
+  private void sendChatMessage(String message, String playerName, String serverName)
+  {
+    api.sendChatMessages(Collections.singletonList(message), playerName, serverName);
+  }
 }

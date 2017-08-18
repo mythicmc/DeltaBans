@@ -34,17 +34,17 @@ import org.bukkit.command.CommandSender;
 /**
  * @author GeeItsZee (tracebachi@gmail.com)
  */
-public class RangeUnbanCommand implements CommandExecutor, Registerable
+public class WarningsCommand implements CommandExecutor, Registerable
 {
-  private static final String COMMAND_NAME = "rangeunban";
-  private static final String COMMAND_USAGE = "/rangeunban <ip>";
-  private static final String COMMAND_PERM = "DeltaBans.RangeBan";
+  private static final String COMMAND_NAME = "warnings";
+  private static final String COMMAND_USAGE = "/warnings <name>";
+  private static final String COMMAND_PERM = "DeltaBans.CheckWarnings";
 
   private final DeltaBansPlugin plugin;
   private final SockExchangeApi api;
   private final MessageFormatMap formatMap;
 
-  public RangeUnbanCommand(DeltaBansPlugin plugin, SockExchangeApi api, MessageFormatMap formatMap)
+  public WarningsCommand(DeltaBansPlugin plugin, SockExchangeApi api, MessageFormatMap formatMap)
   {
     Preconditions.checkNotNull(plugin, "plugin");
     Preconditions.checkNotNull(api, "api");
@@ -88,19 +88,13 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable
       return true;
     }
 
-    String ip = args[0];
-    if (!DeltaBansUtils.isIp(ip))
-    {
-      sender.sendMessage(formatMap.format(Formats.INVALID_IP, ip));
-      return true;
-    }
-
+    String nameToCheck = args[0];
     ByteArrayDataOutput out = ByteStreams.newDataOutput(256);
+    out.writeUTF(api.getServerName());
     out.writeUTF(sender.getName());
-    out.writeUTF(ip);
-    out.writeBoolean(isSilent);
+    out.writeUTF(nameToCheck);
 
-    api.sendToBungee(Channels.RANGE_UNBAN, out.toByteArray());
+    api.sendToBungee(Channels.CHECK_WARNINGS, out.toByteArray());
     return true;
   }
 }

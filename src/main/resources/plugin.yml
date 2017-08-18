@@ -1,8 +1,8 @@
 name: DeltaBans
-main: com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans
+main: com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin
 version: ${project.version}
-author: Trace Bachi (tracebachi@gmail.com, BigBossZee)
-depend: [DeltaRedis, DbShare]
+author: GeeItsZee (tracebachi@gmail.com)
+depend: [SockExchange, DbShare]
 commands:
   ban:
     description: Allows the user to ban others and their IP.
@@ -13,12 +13,6 @@ commands:
   tempban:
     description: Allows the user to ban others for a duration.
     aliases: [dbtempban]
-  nameban:
-    description: Allows the user to ban names instead of IPs.
-    aliases: [dbnameban]
-  tempnameban:
-    description: Allows the user to ban names for a duration.
-    aliases: [dbtempnameban]
   banned:
     description: Allows the user to check if names or IPs are banned.
     aliases: [dbbanned]
@@ -28,8 +22,11 @@ commands:
   warn:
     description: Allows the user to issue warnings.
     aliases: [dbwarn]
+  warnings:
+    description: Allows the user to see if a name has warnings.
+    aliases: [dbwarnings]
   unwarn:
-    description: Allows the user to pardon a single warning.
+    description: Allows the user to pardon warnings.
     aliases: [dbunwarn]
   rangeban:
     description: Allows the user to ban an ip range.
@@ -43,21 +40,3 @@ commands:
   whitelist:
     description: Allows the user to edit or toggle the network whitelist.
     aliases: [dbwhitelist]
-
-permissions:
-  DeltaBans.Ban:
-    description: Main permission for banning and unbanning.
-  DeltaBans.RangeBan:
-    description: Main permission for range banning.
-  DeltaBans.CheckBan:
-    description: Permission for checking bans.
-  DeltaBans.CheckBan.Extra:
-    description: Permission for checking bans (only ban message and banner shown).
-  DeltaBans.Warn:
-    description: Permission for issuing warnings.
-  DeltaBans.Kick:
-    description: Permission for kicking.
-  DeltaBans.Whitelist:
-    description: Permission for edit or toggle whitelist.
-  DeltaBans.Save:
-    description: Permission for forcing save of ban and warning files.

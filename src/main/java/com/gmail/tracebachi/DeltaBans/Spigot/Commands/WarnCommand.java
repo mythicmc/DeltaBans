@@ -1,180 +1,191 @@
 /*
- * This file is part of DeltaBans.
+ * DeltaBans - Ban and warning plugin for BungeeCord and Spigot servers
+ * Copyright (C) 2017 tracebachi@gmail.com (GeeItsZee)
  *
- * DeltaBans is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * DeltaBans is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansUtils;
-import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBans;
-import com.gmail.tracebachi.DeltaBans.Spigot.Settings;
-import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
-import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
-import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import com.gmail.tracebachi.DeltaRedis.Spigot.DeltaRedisApi;
-import com.gmail.tracebachi.DeltaRedis.Spigot.Events.DeltaRedisMessageEvent;
-import org.bukkit.Bukkit;
+import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Channels;
+import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Formats;
+import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
+import com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin;
+import com.gmail.tracebachi.SockExchange.Messages.ResponseMessage;
+import com.gmail.tracebachi.SockExchange.Spigot.SockExchangeApi;
+import com.gmail.tracebachi.SockExchange.Utilities.MessageFormatMap;
+import com.gmail.tracebachi.SockExchange.Utilities.Registerable;
+import com.google.common.base.Preconditions;
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
-
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.*;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
+ * @author GeeItsZee (tracebachi@gmail.com)
  */
-public class WarnCommand implements TabExecutor, Listener, Registerable, Shutdownable
+public class WarnCommand implements TabExecutor, Registerable
 {
-    private static final Pattern NAME_PATTERN = Pattern.compile("\\{name}");
-    private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message}");
+  private static final String COMMAND_NAME = "warn";
+  private static final String COMMAND_USAGE = "/warn <name> [message]";
+  private static final String COMMAND_PERM = "DeltaBans.Warn";
 
-    private DeltaBans plugin;
+  private final DeltaBansPlugin plugin;
+  private final SockExchangeApi api;
+  private final MessageFormatMap formatMap;
 
-    public WarnCommand(DeltaBans plugin)
+  public WarnCommand(DeltaBansPlugin plugin, SockExchangeApi api, MessageFormatMap formatMap)
+  {
+    Preconditions.checkNotNull(plugin, "plugin");
+    Preconditions.checkNotNull(api, "api");
+    Preconditions.checkNotNull(formatMap, "formatMap");
+
+    this.plugin = plugin;
+    this.api = api;
+    this.formatMap = formatMap;
+  }
+
+  @Override
+  public void register()
+  {
+    plugin.getCommand(COMMAND_NAME).setExecutor(this);
+    plugin.getCommand(COMMAND_NAME).setTabCompleter(this);
+  }
+
+  @Override
+  public void unregister()
+  {
+    plugin.getCommand(COMMAND_NAME).setExecutor(null);
+    plugin.getCommand(COMMAND_NAME).setTabCompleter(null);
+  }
+
+  @Override
+  public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+  {
+    return TabCompleteNameHelper.getNamesThatStartsWith(args[args.length - 1], api);
+  }
+
+  @Override
+  public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+  {
+    boolean isSilent = DeltaBansUtils.isSilent(args);
+    if (isSilent)
     {
-        this.plugin = plugin;
+      args = DeltaBansUtils.filterSilent(args);
     }
 
-    @Override
-    public void register()
+    if (args.length < 1)
     {
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        plugin.getCommand("warn").setExecutor(this);
-        plugin.getCommand("warn").setTabCompleter(this);
+      sender.sendMessage(formatMap.format(Formats.USAGE, COMMAND_USAGE));
+      return true;
     }
 
-    @Override
-    public void unregister()
+    if (!sender.hasPermission(COMMAND_PERM))
     {
-        plugin.getCommand("warn").setExecutor(null);
-        plugin.getCommand("warn").setTabCompleter(null);
-        HandlerList.unregisterAll(this);
+      sender.sendMessage(formatMap.format(Formats.NO_PERM, COMMAND_PERM));
+      return true;
     }
 
-    @Override
-    public void shutdown()
+    String warner = sender.getName();
+    String nameToWarn = args[0];
+
+    if (nameToWarn.equalsIgnoreCase(warner))
     {
-        unregister();
-        plugin = null;
+      sender.sendMessage(formatMap.format(Formats.NOT_ALLOWED_ON_SELF, COMMAND_NAME));
+      return true;
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+    String message = "";
+
+    if (args.length > 1)
     {
-        String lastArg = args[args.length - 1];
-        return DeltaRedisApi.instance().matchStartOfPlayerName(lastArg);
+      message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+      message = ChatColor.translateAlternateColorCodes('&', message);
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    ByteArrayDataOutput out = ByteStreams.newDataOutput(256);
+    out.writeUTF(warner);
+    out.writeUTF(nameToWarn);
+    out.writeUTF(message);
+    out.writeBoolean(isSilent);
+
+    api.sendToBungee(
+      Channels.WARN, out.toByteArray(),
+      (resp) -> plugin.executeSync(() -> onResponseToAddingWarn(warner, resp)),
+      TimeUnit.SECONDS.toMillis(10));
+    return true;
+  }
+
+  private void onResponseToAddingWarn(String warner, ResponseMessage responseMessage)
+  {
+    if (!responseMessage.getResponseStatus().isOk())
     {
-        boolean isSilent = DeltaBansUtils.isSilent(args);
-        if(isSilent)
-        {
-            args = DeltaBansUtils.filterSilent(args);
-        }
-
-        if(args.length < 1)
-        {
-            sender.sendMessage(formatUsage("/warn <name> [message]"));
-            return true;
-        }
-
-        if(!sender.hasPermission("DeltaBans.Warn"))
-        {
-            sender.sendMessage(formatNoPerm("DeltaBans.Warn"));
-            return true;
-        }
-
-        String warner = sender.getName();
-        String name = args[0];
-        if(name.equalsIgnoreCase(warner))
-        {
-            sender.sendMessage(format("DeltaBans.NotAllowedToSelf", "warn"));
-            return true;
-        }
-
-        String message = null;
-        if(args.length > 1)
-        {
-            message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-            message = ChatColor.translateAlternateColorCodes('&', message);
-        }
-
-        DeltaRedisApi.instance().publish(
-            Servers.BUNGEECORD,
-            DeltaBansChannels.WARN,
-            warner,
-            name,
-            message == null ? "" : message,
-            isSilent ? "1" : "0");
-        return true;
+      return;
     }
 
-    @EventHandler
-    public void onRedisMessage(DeltaRedisMessageEvent event)
-    {
-        if(event.getChannel().equals(DeltaBansChannels.WARN))
-        {
-            List<String> messageParts = event.getMessageParts();
-            String senderName = messageParts.get(0);
-            String receiver = messageParts.get(1);
-            String message = messageParts.get(2);
-            Integer amount = Integer.parseInt(messageParts.get(3), 16);
+    CommandSender commandSender = null;
+    boolean isConsole = warner.equalsIgnoreCase("console");
 
-            Player player = Bukkit.getPlayerExact(senderName);
-            if(player != null)
-            {
-                boolean wasOp = player.isOp();
-                player.setOp(true);
-                dispatchWarn(player, receiver, message, amount);
-                player.setOp(wasOp);
-            }
-            else
-            {
-                dispatchWarn(Bukkit.getConsoleSender(), receiver, message, amount);
-            }
-        }
+    if (!isConsole)
+    {
+      commandSender = plugin.getServer().getPlayerExact(warner);
     }
 
-    private void dispatchWarn(CommandSender sender, String receiver, String message, Integer warnAmount)
+    // Use the player to run the commands if they are still online.
+    // Default to the console
+    if (commandSender == null)
     {
-        for(String command : Settings.getWarningCommands(warnAmount))
-        {
-            String namedReplaced = NAME_PATTERN.matcher(command).replaceAll(receiver);
-            String messageReplaced = MESSAGE_PATTERN.matcher(namedReplaced).replaceAll(message);
-
-            plugin.info(sender.getName() + " issued warn command /" + messageReplaced);
-
-            try
-            {
-                Bukkit.dispatchCommand(sender, messageReplaced);
-            }
-            catch(Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
+      commandSender = plugin.getServer().getConsoleSender();
     }
+
+    boolean wasOp = commandSender.isOp();
+
+    // Switch the user to OP temporarily
+    if (!isConsole && !wasOp)
+    {
+      commandSender.setOp(true);
+    }
+
+    ByteArrayDataInput in = responseMessage.getDataInput();
+    int commandCount = in.readInt();
+
+    // Dispatch all the commands that were returned
+    for (int i = 0; i < commandCount; i++)
+    {
+      try
+      {
+        String command = in.readUTF();
+
+        plugin.getLogger().info(warner + " issued warn command /" + command);
+        plugin.getServer().dispatchCommand(commandSender, command);
+      }
+      catch (Exception ex)
+      {
+        ex.printStackTrace();
+      }
+    }
+
+    // Switch the sender back to their original OP status
+    if (!isConsole && !wasOp)
+    {
+      commandSender.setOp(false);
+    }
+  }
 }

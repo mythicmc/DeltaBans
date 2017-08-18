@@ -5,54 +5,71 @@
 # Name of the DataSource in DbShare
 DbShareDataSourceName: Main
 
-# Delay between removing old warnings
-MinutesPerWarningCleanup: 120
+# Enable network whitelist on start up
+StartWithWhitelistEnabled: False
 
 # Duration of warnings in minutes (10080 = 1 week)
-WarningDuration: 10080
+WarningDurationInMinutes: 10080
 
-# Enable whitelist by start up
-Whitelist: False
+# Commands to run at a specific number of warnings for a player
+# {name} = Name of the player that was warned
+# {message} = Message that was sent when warn was used
+WarningCommands:
+  1:
+  - 'tell {name} You have been warned by staff: {message}'
+  2:
+  - 'kick {name} Final warning from staff: {message}'
+  3:
+  - 'tempban {name} 1h 3 warnings: {message}'
+  4:
+  - 'tempban {name} 3h 4 warnings: {message}'
+  5:
+  - 'tempban {name} 1d 5 warnings: {message}'
+  6:
+  - 'tempban {name} 2d 6 warnings: {message}'
+  7:
+  - 'tempban {name} 2d 7 warnings: {message}'
+  8:
+  - 'tempban {name} 2d 8 warnings: {message}'
+  9:
+  - 'tempban {name} 2d 9 warnings: {message}'
+  10:
+  - 'tempban {name} 2d 10 warnings: {message}'
 
 # Formatting
 Formats:
 
-  PermanentBanMessage: "{0} - {1}\n\nThis ban is a permanent ban"
-  TemporaryBanMessage: "{0} - {1}\n\nThis ban is temporary and will expire in:\n{2}"
-  RangeBanMessage: "{0} - {1}\n\nIf you need to be exempted from this range ban, contact an administrator of this server"
+  DefaultMessage/Ban: 'The Ban Hammer has spoken!'
+  DefaultMessage/RangeBan: 'You have been IP range-banned from this server!'
+  DefaultMessage/Kick: 'Did I do that? :o'
+  DefaultMessage/Warn: 'Stop that!'
 
-  SilentPrefix: '&8[&6Silent&8]&6'
-  Announcement.Ban: '&8[&6Ban&8]&6 &f{0}&6 banned &f{1}&6. Reason: &f{2}&6. Duration: &f{2}&6.'
-  Announcement.Unban: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6.'
-  Announcement.RangeBan: '&8[&6Ban&8]&6 &f{0}&6 range-banned &f{1}&6 for &f{2}&6.'
-  Announcement.RangeUnban: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6 IP ranges that overlapped with &f{2}&6.'
-  Announcement.Warn: '&8[&6Warn&8]&6 &f{0}&6 warned &f{1}&6 for &f{2}&6.'
-  Announcement.Unwarn: '&8[&a!&8] &aSuccess &8[&a!&8]&7 &f{0}&7 removed &f{1}&7 warnings from &f{2}&7.'
+  ServerInWhitelistMode: '&8[&6!&8]&7=&8[&6Server is currently in whitelist mode&8]&7=&8[&6!&8]'
+  BanNotFound: '&8[&9!&8] &9Info &8[&9!&8]&7 Ban not found for &f{0}&7'
+  WarningsNotFound: '&8[&9!&8] &9Info &8[&9!&8]&7 Warnings not found for &f{0}&7'
+  BanAlreadyExists: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 @ &f{1}&7 is already banned'
 
-  BanNotFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 Ban not found for &f{0}&7'
-  AlreadyBanned: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already banned'
-  NameAndIpAlreadyBanned: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 @ &f{1}&7 is already banned'
+  Announce/Ban: '&8[&6Ban&8]&6 &f{0}&6 banned &f{1}&6. Reason: &f{2}&6. Duration: &f{3}&6.'
+  Announce/Unban: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6.'
+  Announce/RangeBan: '&8[&6Ban&8]&6 &f{0}&6 range-banned &f{1}&6 for &f{2}&6.'
+  Announce/RangeUnban: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6 IP ranges that overlapped with &f{2}&6.'
+  Announce/Kick: '&8[&6Kick&8]&6 &f{0}&6 kicked &f{1}&6 for &f{2}&6.'
+  Announce/Warn: '&8[&6Warn&8]&6 &f{0}&6 warned &f{1}&6 for &f{2}&6.'
+  Announce/Unwarn: '&8[&6Unwarn&8]&6 &f{0}&6 unwarned &f{1}&6 (x&f{2}&6).'
 
-  WhitelistMessage: '&8[&6!&8]&7=&8[&6Server is currently in whitelist mode&8]&7=&8[&6!&8]'
-  WhitelistToggle: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Whitelist is now &f{0}&7'
+  TemporaryBanMessage: "&6{0}&r - &6{1}&r\n\nThis ban is temporary and will expire in:\n{2}"
+  PermanentBanMessage: "&6{0}&r - &6{1}&r\n\nThis ban is a permanent ban"
+  RangeBanMessage: "&6{0}&r - &6{1}&r\n\nIf you need to be exempted from this range ban, contact an administrator of this server"
 
-  AddedToWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Added &f{0}&7 to &f{1}&7 whitelist'
-  AlreadyInWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is already in the &f{1}&7 whitelist'
-  RemovedFromWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Removed &f{0}&7 from &f{1}&7 whitelist'
-  NotInWhitelist: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not in the &f{1}&7 whitelist'
+  WhitelistToggled: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Whitelist is now &f{0}&7.'
+  AddedToWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Added &f{0}&7 to the &f{1}&7 whitelist.'
+  RemovedFromWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Removed &f{0}&7 from the &f{1}&7 whitelist.'
 
-  KickMessageToPlayer: 'You have been kicked by {0} for {2}'
-  KickMessageToAnnounce: '&8[&6Kick&8]&7 &f{1}&7 was kicked by &f{0}&7 for &f{2}&7.'
+  PlayerOffline: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not online.'
+  KickMessage: 'You have been kicked by &6{0}&r for &6{2}&r.'
 
-  BanInfo.NotFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 No bans found'
-  BanInfo.LineFormat: '&8[&6Ban Info&8]&7 {0}: &f{1}&7'
-  WarningInfo.NotFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 No warnings found'
-  WarningInfo.LineFormat: '&8[&6Warning Info&8]&7 {0}: &f{1}&7'
+  BanInfoLine: '&8[&6Ban Info&8]&7 &f{0}&7: &f{1}&7'
+  WarningInfoLine: '&8[&6Warning Info&8]&7 &f{0}&7 warned for &f{1}&7'
 
-  DefaultMessage.Ban: 'The Ban Hammer has spoken!'
-  DefaultMessage.RangeBan: 'You have been IP range banned from this server!'
-  DefaultMessage.Kick: 'Did I do that? :o'
-  DefaultMessage.Warn: 'Stop that!'
-
-# Used for debugging DeltaBans
-Debug: False
+# Debug Mode
+DebugMode: False

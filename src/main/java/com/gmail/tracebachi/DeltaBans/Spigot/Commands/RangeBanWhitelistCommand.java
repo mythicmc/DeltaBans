@@ -28,23 +28,25 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
+
+import java.util.List;
 
 /**
  * @author GeeItsZee (tracebachi@gmail.com)
  */
-public class RangeUnbanCommand implements CommandExecutor, Registerable
+public class RangeBanWhitelistCommand implements TabExecutor, Registerable
 {
-  private static final String COMMAND_NAME = "rangeunban";
-  private static final String COMMAND_USAGE = "/rangeunban <ip>";
+  private static final String COMMAND_NAME = "rangebanwhitelist";
+  private static final String COMMAND_USAGE = "/rangebanwhitelist <add|remove> <name>";
   private static final String COMMAND_PERM = "DeltaBans.RangeBan";
 
   private final DeltaBansPlugin plugin;
   private final SockExchangeApi api;
   private final MessageFormatMap formatMap;
 
-  public RangeUnbanCommand(DeltaBansPlugin plugin, SockExchangeApi api, MessageFormatMap formatMap)
+  public RangeBanWhitelistCommand(DeltaBansPlugin plugin, SockExchangeApi api, MessageFormatMap formatMap)
   {
     Preconditions.checkNotNull(plugin, "plugin");
     Preconditions.checkNotNull(api, "api");
@@ -59,12 +61,20 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable
   public void register()
   {
     plugin.getCommand(COMMAND_NAME).setExecutor(this);
+    plugin.getCommand(COMMAND_NAME).setTabCompleter(this);
   }
 
   @Override
   public void unregister()
   {
     plugin.getCommand(COMMAND_NAME).setExecutor(null);
+    plugin.getCommand(COMMAND_NAME).setTabCompleter(null);
+  }
+
+  @Override
+  public List<String> onTabComplete(CommandSender sender, Command command, String s, String[] args)
+  {
+    return TabCompleteNameHelper.getNamesThatStartsWith(args[args.length - 1], api);
   }
 
   @Override
@@ -76,7 +86,7 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable
       args = DeltaBansUtils.filterSilent(args);
     }
 
-    if (args.length < 1)
+    if (args.length < 2)
     {
       sender.sendMessage(formatMap.format(Formats.USAGE, COMMAND_USAGE));
       return true;
@@ -88,19 +98,28 @@ public class RangeUnbanCommand implements CommandExecutor, Registerable
       return true;
     }
 
-    String ip = args[0];
-    if (!DeltaBansUtils.isIp(ip))
+    String nameToEdit = args[1];
+    ByteArrayDataOutput out = ByteStreams.newDataOutput(128);
+    out.writeUTF(api.getServerName());
+    out.writeUTF(sender.getName());
+    out.writeUTF("rangeban");
+    out.writeUTF(nameToEdit);
+
+    if (args[0].equalsIgnoreCase("add"))
     {
-      sender.sendMessage(formatMap.format(Formats.INVALID_IP, ip));
+      out.writeBoolean(true);
+    }
+    else if (args[0].equalsIgnoreCase("remove"))
+    {
+      out.writeBoolean(false);
+    }
+    else
+    {
+      sender.sendMessage(formatMap.format(Formats.USAGE, COMMAND_USAGE));
       return true;
     }
 
-    ByteArrayDataOutput out = ByteStreams.newDataOutput(256);
-    out.writeUTF(sender.getName());
-    out.writeUTF(ip);
-    out.writeBoolean(isSilent);
-
-    api.sendToBungee(Channels.RANGE_UNBAN, out.toByteArray());
+    api.sendToBungee(Channels.WHITELIST_EDIT, out.toByteArray());
     return true;
   }
 }

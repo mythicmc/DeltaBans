@@ -17,20 +17,12 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.Entries.RangeBanEntry;
-
 /**
  * @author GeeItsZee (tracebachi@gmail.com)
  */
-public interface RangeBanStorage extends LoadAndSaveable
+public interface LoadAndSaveable
 {
-  RangeBanEntry getIpRangeBan(String ip);
+  void load() throws Exception;
 
-  RangeBanEntry getIpRangeBan(long ipAsLong);
-
-  void add(RangeBanEntry banEntry);
-
-  int removeIpRangeBan(String ip);
-
-  int removeIpRangeBan(long ipAsLong);
+  void save() throws Exception;
 }

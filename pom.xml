@@ -6,7 +6,7 @@
 
     <groupId>com.gmail.tracebachi</groupId>
     <artifactId>DeltaBans</artifactId>
-    <version>1.9.0</version>
+    <version>2.0.0</version>
 
     <repositories>
         <repository>
@@ -28,24 +28,24 @@
         </dependency>
         <dependency>
             <groupId>net.md-5</groupId>
-            <artifactId>bungeecord-jar</artifactId>
-            <version>1.10</version>
+            <artifactId>BungeeCord</artifactId>
+            <version>1217</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.gmail.tracebachi</groupId>
-            <artifactId>DeltaRedis</artifactId>
-            <version>3.0.0</version>
+            <artifactId>SockExchange</artifactId>
+            <version>1.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.gmail.tracebachi</groupId>
             <artifactId>DbShare</artifactId>
-            <version>1.1.0</version>
+            <version>2.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>localrepo</groupId>
+            <groupId>io.kyzderp</groupId>
             <artifactId>BungeeLogger</artifactId>
             <version>1.0.0</version>
             <scope>provided</scope>

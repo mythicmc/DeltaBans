@@ -2,11 +2,11 @@
 # DeltaBans Configuration File (Spigot)
 ###############################################################################
 
-# DbShare Database name
-Database:
+# Name of the DataSource in DbShare
+DbShareDataSourceName: Main
 
-  # DbShare Database name
-  Name: Main
+# SQL table and columns for doing IP lookups
+IpLookup:
   # Accounts table name
   Table: accounts
   # Column in accounts table that stores last known IP
@@ -14,42 +14,18 @@ Database:
   # Column in accounts table that stores player name
   PlayerColumn: playername
 
+# Prefix used for announcing to players that have the DeltaBans.SeeSilent permission
+SilentAnnouncementPrefix: '&8[&6Silent&8]&6'
+
 # Formatting
 Formats:
 
-  NotAllowedToSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to {0} yourself?'
-
-  NoIpFound: '&8[&c!&8] &cFailure &8[&c!&8]&7 There is no IP information for &f{0}&7, but they can still be banned with /nameban'
-  IpInNameBan: '&8[&c!&8] &cFailure &8[&c!&8]&7 Use /ban for IP bans'
-  InvalidDuration: '&8[&c!&8] &cFailure &8[&c!&8] &7{0} is an invalid duration (ex. 1s, 2m, 3h, 4d)'
-
+  NoPerm: '&8[&c!&8] &cFailure &8[&c!&8]&7 You do not have the &f{0}&7 permission.'
+  Usage: '&8[&9!&8] &9Usage &8[&9!&8]&7 {0}'
+  NotAllowedOnSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to &f{0}&7 yourself?'
+  NoIpFound: '&8[&9!&8] &9Info &8[&9!&8]&7 There was no IP found for &f{0}&7. An IP will not be added to the ban.'
+  InvalidDuration: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is an invalid duration (valid examples: 1s, 2m, 3h, 4d).'
   InvalidIp: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not an IP.'
-  InvalidIpRange: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7-&f{1}&7 is not a valid IP range.'
 
-# Commands to run on a specific number of warnings
-# {name} Name of the player that was warned
-# {message} Message that was sent as part of the warning
-WarningCommands:
-  1:
-  - 'tell {name} You have been warned by staff: {message}'
-  2:
-  - 'kick {name} Final warning from staff: {message}'
-  3:
-  - 'tempban {name} 1h 3 warnings: {message}'
-  4:
-  - 'tempban {name} 3h 4 warnings: {message}'
-  5:
-  - 'tempban {name} 1d 5 warnings: {message}'
-  6:
-  - 'tempban {name} 2d 6 warnings: {message}'
-  7:
-  - 'tempban {name} 2d 7 warnings: {message}'
-  8:
-  - 'tempban {name} 2d 8 warnings: {message}'
-  9:
-  - 'tempban {name} 2d 9 warnings: {message}'
-  10:
-  - 'tempban {name} 2d 10 warnings: {message}'
-
-# Used for debugging DeltaBans
-Debug: False
+# Debug Mode
+DebugMode: False

@@ -1,191 +1,162 @@
 /*
- * This file is part of DeltaBans.
+ * DeltaBans - Ban and warning plugin for BungeeCord and Spigot servers
+ * Copyright (C) 2017 tracebachi@gmail.com (GeeItsZee)
  *
- * DeltaBans is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * DeltaBans is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with DeltaBans.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Listeners;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBans;
 import com.gmail.tracebachi.DeltaBans.Bungee.Entries.WarningEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningStorage;
-import com.gmail.tracebachi.DeltaBans.Shared.DeltaBansChannels;
-import com.gmail.tracebachi.DeltaRedis.Bungee.DeltaRedisApi;
-import com.gmail.tracebachi.DeltaRedis.Bungee.Events.DeltaRedisMessageEvent;
-import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Registerable;
-import com.gmail.tracebachi.DeltaRedis.Shared.Interfaces.Shutdownable;
-import com.gmail.tracebachi.DeltaRedis.Shared.Servers;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.api.scheduler.ScheduledTask;
-import net.md_5.bungee.event.EventHandler;
+import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Channels;
+import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Formats;
+import com.gmail.tracebachi.SockExchange.Bungee.SockExchangeApi;
+import com.gmail.tracebachi.SockExchange.Messages.ReceivedMessage;
+import com.gmail.tracebachi.SockExchange.Messages.ReceivedMessageNotifier;
+import com.gmail.tracebachi.SockExchange.Utilities.MessageFormatMap;
+import com.gmail.tracebachi.SockExchange.Utilities.Registerable;
+import com.google.common.base.Preconditions;
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static com.gmail.tracebachi.DeltaRedis.Shared.ChatMessageHelper.format;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 /**
- * Created by Trace Bachi (tracebachi@gmail.com, BigBossZee) on 12/16/15.
+ * @author GeeItsZee (tracebachi@gmail.com)
  */
-public class WarningListener implements Listener, Registerable, Shutdownable
+public class WarningListener implements Registerable
 {
-    private WarningStorage warningStorage;
-    private ScheduledTask scheduledTask;
-    private DeltaBans plugin;
+  private static final Pattern NAME_PATTERN = Pattern.compile("\\{name}");
+  private static final Pattern MESSAGE_PATTERN = Pattern.compile("\\{message}");
 
-    public WarningListener(DeltaBans plugin)
+  private final WarningStorage warningStorage;
+  private final Map<Integer, List<String>> warningCommandsMap;
+  private final SockExchangeApi api;
+  private final MessageFormatMap formatMap;
+  private final Consumer<ReceivedMessage> warnChannelListener;
+  private final Consumer<ReceivedMessage> unwarnChannelListener;
+
+  public WarningListener(
+    WarningStorage warningStorage, Map<Integer, List<String>> warningCommandsMap,
+    SockExchangeApi api, MessageFormatMap formatMap)
+  {
+    Preconditions.checkNotNull(warningStorage, "warningStorage");
+    Preconditions.checkNotNull(warningCommandsMap, "warningCommandsMap");
+    Preconditions.checkNotNull(api, "api");
+    Preconditions.checkNotNull(formatMap, "formatMap");
+
+    this.warningStorage = warningStorage;
+    this.warningCommandsMap = warningCommandsMap;
+    this.api = api;
+    this.formatMap = formatMap;
+    this.warnChannelListener = this::onWarnChannelRequest;
+    this.unwarnChannelListener = this::onUnwarnChannelRequest;
+  }
+
+  @Override
+  public void register()
+  {
+    ReceivedMessageNotifier messageNotifier = api.getMessageNotifier();
+    messageNotifier.register(Channels.WARN, warnChannelListener);
+    messageNotifier.register(Channels.UNWARN, unwarnChannelListener);
+  }
+
+  @Override
+  public void unregister()
+  {
+    ReceivedMessageNotifier messageNotifier = api.getMessageNotifier();
+    messageNotifier.unregister(Channels.WARN, warnChannelListener);
+    messageNotifier.unregister(Channels.UNWARN, unwarnChannelListener);
+  }
+
+  private void onWarnChannelRequest(ReceivedMessage receivedMessage)
+  {
+    ByteArrayDataInput in = receivedMessage.getDataInput();
+    String warner = in.readUTF();
+    String nameToWarn = in.readUTF();
+    String message = in.readUTF();
+    boolean isSilent = in.readBoolean();
+
+    message = message.equals("") ? formatMap.format(Formats.DEFAULT_MESSAGE_WARN) : message;
+
+    // Add warning
+    WarningEntry warningEntry = new WarningEntry(nameToWarn, warner, message);
+    int count = warningStorage.addWarning(warningEntry);
+
+    String announcement = formatMap.format(Formats.ANNOUNCE_WARN, warner, nameToWarn, message);
+    announce(announcement, isSilent);
+
+    // Get the list of command formats for warnings
+    List<String> commandFormats = warningCommandsMap.getOrDefault(count, Collections.emptyList());
+
+    // Respond with the list of commands to run
+    byte[] bytes = getBytesForCommandsToRunForWarning(nameToWarn, message, commandFormats);
+    receivedMessage.respond(bytes);
+  }
+
+  private void onUnwarnChannelRequest(ReceivedMessage receivedMessage)
+  {
+    ByteArrayDataInput in = receivedMessage.getDataInput();
+    String sendingServer = in.readUTF();
+    String warner = in.readUTF();
+    String nameToUnwarn = in.readUTF();
+    int amountToUnwarn = in.readInt();
+    boolean isSilent = in.readBoolean();
+
+    // Remove warnings
+    int removeCount = warningStorage.removeWarnings(nameToUnwarn, amountToUnwarn);
+    if (removeCount == 0)
     {
-        this.plugin = plugin;
-        this.warningStorage = plugin.getWarningStorage();
+      String chatMessage = formatMap.format(Formats.WARNINGS_NOT_FOUND, nameToUnwarn);
+      api.sendChatMessages(Collections.singletonList(chatMessage), warner, sendingServer);
+    }
+    else
+    {
+      String announcement = formatMap.format(
+        Formats.ANNOUNCE_UNWARN, warner, nameToUnwarn, String.valueOf(removeCount));
+      announce(announcement, isSilent);
+    }
+  }
+
+  private void announce(String announcement, boolean isSilent)
+  {
+    ByteArrayDataOutput out = ByteStreams.newDataOutput(announcement.length() * 2);
+    out.writeBoolean(isSilent);
+    out.writeUTF(announcement);
+
+    api.sendToServers(Channels.ANNOUNCEMENT, out.toByteArray());
+  }
+
+  private byte[] getBytesForCommandsToRunForWarning(
+    String nameToWarn, String message, List<String> commandFormats)
+  {
+    ByteArrayDataOutput out = ByteStreams.newDataOutput(512);
+    out.writeInt(commandFormats.size());
+
+    for (String commandFormat : commandFormats)
+    {
+      String withNameReplaced = NAME_PATTERN.matcher(commandFormat).replaceAll(nameToWarn);
+      String withMessageReplaced = MESSAGE_PATTERN.matcher(withNameReplaced).replaceAll(message);
+
+      out.writeUTF(withMessageReplaced);
     }
 
-    @Override
-    public void register()
-    {
-        ProxyServer proxy = plugin.getProxy();
-        proxy.getPluginManager().registerListener(plugin, this);
-
-        scheduledTask = proxy.getScheduler().schedule(plugin,
-            warningStorage::removeExpired,
-            10, // Delay
-            10, // Period
-            TimeUnit.MINUTES);
-    }
-
-    @Override
-    public void unregister()
-    {
-        ProxyServer proxy = plugin.getProxy();
-        proxy.getPluginManager().unregisterListener(this);
-        proxy.getScheduler().cancel(scheduledTask);
-    }
-
-    @Override
-    public void shutdown()
-    {
-        unregister();
-        warningStorage = null;
-        scheduledTask = null;
-        plugin = null;
-    }
-
-    @EventHandler
-    public void onRedisMessage(DeltaRedisMessageEvent event)
-    {
-        DeltaRedisApi api = DeltaRedisApi.instance();
-        String channel = event.getChannel();
-        List<String> messageParts = event.getMessageParts();
-
-        if(channel.equals(DeltaBansChannels.WARN))
-        {
-            String warner = messageParts.get(0);
-            String name = messageParts.get(1);
-            String message = messageParts.get(2);
-            boolean isSilent = messageParts.get(3).equals("1");
-
-            handleWarnDeltaRedisMessageEvent(
-                event.getSendingServer(),
-                warner,
-                name,
-                message,
-                isSilent);
-        }
-        else if(channel.equalsIgnoreCase(DeltaBansChannels.UNWARN))
-        {
-            String warner = messageParts.get(0);
-            String name = messageParts.get(1);
-            Integer amount = parseIntFromHexString(messageParts.get(2));
-            boolean isSilent = messageParts.get(3).equals("1");
-
-            handleUnwarnDeltaRedisMessageEvent(
-                warner,
-                name,
-                amount,
-                isSilent);
-        }
-    }
-
-    private void handleWarnDeltaRedisMessageEvent(String sendingServer, String warner, String name,
-                                                  String message, boolean isSilent)
-    {
-        if(message == null)
-        {
-            message = format("DeltaBans.DefaultMessage.Warn");
-        }
-
-        int count = warningStorage.addWarning(new WarningEntry(name, warner, message));
-
-        DeltaRedisApi.instance().publish(
-            sendingServer,
-            DeltaBansChannels.WARN,
-            warner,
-            name,
-            message,
-            Integer.toHexString(count));
-
-        String announcement = format(
-            "DeltaBans.Announcement.Warn",
-            warner,
-            name,
-            message);
-        announce(announcement, isSilent);
-    }
-
-    private void handleUnwarnDeltaRedisMessageEvent(String warner, String name, Integer amount,
-                                                    boolean isSilent)
-    {
-        amount = (amount == null) ? 0 : amount;
-
-        int amountActuallyRemoved = warningStorage.removeWarning(name, amount);
-
-        String announcement = format(
-            "DeltaBans.Announcement.Unwarn",
-            warner,
-            String.valueOf(amountActuallyRemoved),
-            name);
-        announce(announcement, isSilent);
-    }
-
-    private void announce(String announcement, boolean isSilent)
-    {
-        if(isSilent)
-        {
-            DeltaRedisApi.instance().sendServerAnnouncement(
-                Servers.SPIGOT,
-                format("DeltaBans.SilentPrefix") + announcement,
-                "DeltaBans.SeeSilent");
-        }
-        else
-        {
-            DeltaRedisApi.instance().sendServerAnnouncement(
-                Servers.SPIGOT,
-                announcement,
-                "");
-        }
-    }
-
-    private Integer parseIntFromHexString(String input)
-    {
-        try
-        {
-            if(input.equals("")) { return null; }
-
-            return Integer.parseInt(input, 16);
-        }
-        catch(NumberFormatException e)
-        {
-            return null;
-        }
-    }
+    return out.toByteArray();
+  }
 }

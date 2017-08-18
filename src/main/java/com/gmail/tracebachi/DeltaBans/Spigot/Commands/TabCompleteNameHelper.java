@@ -15,22 +15,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.gmail.tracebachi.DeltaBans.Bungee.Storage;
+package com.gmail.tracebachi.DeltaBans.Spigot.Commands;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.Entries.RangeBanEntry;
+import com.gmail.tracebachi.SockExchange.Spigot.SockExchangeApi;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author GeeItsZee (tracebachi@gmail.com)
  */
-public interface RangeBanStorage extends LoadAndSaveable
+class TabCompleteNameHelper
 {
-  RangeBanEntry getIpRangeBan(String ip);
+  static List<String> getNamesThatStartsWith(String partialName, SockExchangeApi api)
+  {
+    List<String> results = new ArrayList<>(2);
 
-  RangeBanEntry getIpRangeBan(long ipAsLong);
+    partialName = partialName.toLowerCase();
 
-  void add(RangeBanEntry banEntry);
+    for (String name : api.getOnlinePlayerNames())
+    {
+      if (name.toLowerCase().startsWith(partialName))
+      {
+        results.add(name);
+      }
+    }
 
-  int removeIpRangeBan(String ip);
-
-  int removeIpRangeBan(long ipAsLong);
+    return results;
+  }
 }
