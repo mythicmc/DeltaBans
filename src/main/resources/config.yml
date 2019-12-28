@@ -1,0 +1,31 @@
+###############################################################################
+# DeltaBans Configuration File (Spigot)
+###############################################################################
+
+# Name of the DataSource in DbShare
+DbShareDataSourceName: Main
+
+# SQL table and columns for doing IP lookups
+IpLookup:
+  # Accounts table name
+  Table: accounts
+  # Column in accounts table that stores last known IP
+  IpColumn: lastloginip
+  # Column in accounts table that stores player name
+  PlayerColumn: playername
+
+# Prefix used for announcing to players that have the DeltaBans.SeeSilent permission
+SilentAnnouncementPrefix: '&8[&6Silent&8]&6'
+
+# Formatting
+Formats:
+
+  NoPerm: '&8[&c!&8] &cFailure &8[&c!&8]&7 You do not have the &f{0}&7 permission.'
+  Usage: '&8[&9!&8] &9Usage &8[&9!&8]&7 {0}'
+  NotAllowedOnSelf: '&8[&c!&8] &cFailure &8[&c!&8]&7 Why are you trying to &f{0}&7 yourself?'
+  NoIpFound: '&8[&9!&8] &9Info &8[&9!&8]&7 There was no IP found for &f{0}&7. An IP will not be added to the ban.'
+  InvalidDuration: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is an invalid duration (valid examples: 1s, 2m, 3h, 4d).'
+  InvalidIp: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not an IP.'
+
+# Debug Mode
+DebugMode: False

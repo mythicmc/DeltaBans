@@ -1,0 +1,5 @@
+name: DeltaBans
+main: com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPlugin
+version: 2.0.1
+author: GeeItsZee (tracebachi@gmail.com)
+depends: [SockExchange, DbShare]

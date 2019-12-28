@@ -1,0 +1,75 @@
+###############################################################################
+# DeltaBans Configuration File (Bungee)
+###############################################################################
+
+# Name of the DataSource in DbShare
+DbShareDataSourceName: Main
+
+# Enable network whitelist on start up
+StartWithWhitelistEnabled: False
+
+# Duration of warnings in minutes (10080 = 1 week)
+WarningDurationInMinutes: 10080
+
+# Commands to run at a specific number of warnings for a player
+# {name} = Name of the player that was warned
+# {message} = Message that was sent when warn was used
+WarningCommands:
+  1:
+    - 'tell {name} You have been warned by staff: {message}'
+  2:
+    - 'kick {name} Final warning from staff: {message}'
+  3:
+    - 'tempban {name} 1h 3 warnings: {message}'
+  4:
+    - 'tempban {name} 3h 4 warnings: {message}'
+  5:
+    - 'tempban {name} 1d 5 warnings: {message}'
+  6:
+    - 'tempban {name} 2d 6 warnings: {message}'
+  7:
+    - 'tempban {name} 2d 7 warnings: {message}'
+  8:
+    - 'tempban {name} 2d 8 warnings: {message}'
+  9:
+    - 'tempban {name} 2d 9 warnings: {message}'
+  10:
+    - 'tempban {name} 2d 10 warnings: {message}'
+
+# Formatting
+Formats:
+
+  DefaultMessage/Ban: 'The Ban Hammer has spoken!'
+  DefaultMessage/RangeBan: 'You have been IP range-banned from this server!'
+  DefaultMessage/Kick: 'Did I do that? :o'
+  DefaultMessage/Warn: 'Stop that!'
+
+  ServerInWhitelistMode: '&8[&6!&8]&7=&8[&6Server is currently in whitelist mode&8]&7=&8[&6!&8]'
+  BanNotFound: '&8[&9!&8] &9Info &8[&9!&8]&7 Ban not found for &f{0}&7'
+  WarningsNotFound: '&8[&9!&8] &9Info &8[&9!&8]&7 Warnings not found for &f{0}&7'
+  BanAlreadyExists: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 @ &f{1}&7 is already banned'
+
+  Announce/Ban: '&8[&6Ban&8]&6 &f{0}&6 banned &f{1}&6. Reason: &f{2}&6. Duration: &f{3}&6.'
+  Announce/Unban: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6.'
+  Announce/RangeBan: '&8[&6Ban&8]&6 &f{0}&6 range-banned &f{1}&6 for &f{2}&6.'
+  Announce/RangeUnban: '&8[&6Unban&8]&6 &f{0}&6 unbanned &f{1}&6 IP ranges that overlapped with &f{2}&6.'
+  Announce/Kick: '&8[&6Kick&8]&6 &f{0}&6 kicked &f{1}&6 for &f{2}&6.'
+  Announce/Warn: '&8[&6Warn&8]&6 &f{0}&6 warned &f{1}&6 for &f{2}&6.'
+  Announce/Unwarn: '&8[&6Unwarn&8]&6 &f{0}&6 unwarned &f{1}&6 (x&f{2}&6).'
+
+  TemporaryBanMessage: "&6{0}&r - &6{1}&r\n\nThis ban is temporary and will expire in:\n{2}"
+  PermanentBanMessage: "&6{0}&r - &6{1}&r\n\nThis ban is a permanent ban"
+  RangeBanMessage: "&6{0}&r - &6{1}&r\n\nIf you need to be exempted from this range ban, contact an administrator of this server"
+
+  WhitelistToggled: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Whitelist is now &f{0}&7.'
+  AddedToWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Added &f{0}&7 to the &f{1}&7 whitelist.'
+  RemovedFromWhitelist: '&8[&a!&8] &aSuccess &8[&a!&8]&7 Removed &f{0}&7 from the &f{1}&7 whitelist.'
+
+  PlayerOffline: '&8[&c!&8] &cFailure &8[&c!&8]&7 &f{0}&7 is not online.'
+  KickMessage: 'You have been kicked by &6{0}&r for &6{2}&r.'
+
+  BanInfoLine: '&8[&6Ban Info&8]&7 &f{0}&7: &f{1}&7'
+  WarningInfoLine: '&8[&6Warning Info&8]&7 &f{0}&7 warned for &f{1}&7'
+
+# Debug Mode
+DebugMode: False

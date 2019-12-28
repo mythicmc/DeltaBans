@@ -1,0 +1,42 @@
+name: DeltaBans
+main: com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin
+version: 2.0.1
+author: GeeItsZee (tracebachi@gmail.com)
+depend: [SockExchange, DbShare]
+commands:
+  ban:
+    description: Allows the user to ban others and their IP.
+    aliases: [dbban]
+  unban:
+    description: Allows the user to unban others.
+    aliases: [dbunban]
+  tempban:
+    description: Allows the user to ban others for a duration.
+    aliases: [dbtempban]
+  banned:
+    description: Allows the user to check if names or IPs are banned.
+    aliases: [dbbanned]
+  kick:
+    description: Allows the user to kick others.
+    aliases: [dbkick]
+  warn:
+    description: Allows the user to issue warnings.
+    aliases: [dbwarn]
+  warnings:
+    description: Allows the user to see if a name has warnings.
+    aliases: [dbwarnings]
+  unwarn:
+    description: Allows the user to pardon warnings.
+    aliases: [dbunwarn]
+  rangeban:
+    description: Allows the user to ban an ip range.
+    aliases: [dbrangeban]
+  rangeunban:
+    description: Allows the user to unban an ip range.
+    aliases: [dbrangeunban]
+  rangebanwhitelist:
+    description: Allows the user to whitelist a name in a rangeban.
+    aliases: [dbrangebanwhitelist]
+  whitelist:
+    description: Allows the user to edit or toggle the network whitelist.
+    aliases: [dbwhitelist]
