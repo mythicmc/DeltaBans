@@ -34,7 +34,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import net.md_5.bungee.BungeeCord;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -236,7 +236,7 @@ public class BanListener implements Listener, Registerable
 
     if (name != null)
     {
-      ProxiedPlayer proxiedPlayer = BungeeCord.getInstance().getPlayer(name);
+      ProxiedPlayer proxiedPlayer = ProxyServer.getInstance().getPlayer(name);
 
       if (proxiedPlayer != null)
       {
@@ -246,7 +246,7 @@ public class BanListener implements Listener, Registerable
 
     if (ip != null)
     {
-      for (ProxiedPlayer player : BungeeCord.getInstance().getPlayers())
+      for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers())
       {
         if (player.getAddress().getAddress().getHostAddress().equals(ip))
         {
@@ -260,7 +260,7 @@ public class BanListener implements Listener, Registerable
   {
     BaseComponent[] kickMessage = TextComponent.fromLegacyText(message);
 
-    for (ProxiedPlayer player : BungeeCord.getInstance().getPlayers())
+    for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers())
     {
       long ipAsLong = DeltaBansUtils.convertIpToLong(
         player.getAddress().getAddress().getHostAddress());

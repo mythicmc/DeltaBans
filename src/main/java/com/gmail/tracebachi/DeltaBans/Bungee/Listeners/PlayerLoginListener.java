@@ -30,6 +30,7 @@ import com.gmail.tracebachi.SockExchange.Utilities.MessageFormatMap;
 import com.gmail.tracebachi.SockExchange.Utilities.Registerable;
 import com.google.common.base.Preconditions;
 import io.github.kyzderp.bungeelogger.BungeeLog;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.PendingConnection;
 import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -96,8 +97,9 @@ public class PlayerLoginListener implements Listener, Registerable
       String banner = rangeBanEntry.getBanner();
       logDeniedLoginAttempt(playerName, address, message, banner);
 
-      event.setCancelReason(getKickMessage(rangeBanEntry));
+      event.setCancelReason(TextComponent.fromLegacyText(getKickMessage(rangeBanEntry)));
       event.setCancelled(true);
+      event.getConnection().disconnect(TextComponent.fromLegacyText(getKickMessage(rangeBanEntry)));
       return;
     }
 
@@ -109,8 +111,9 @@ public class PlayerLoginListener implements Listener, Registerable
       String banner = banEntry.getBanner();
       logDeniedLoginAttempt(playerName, address, message, banner);
 
-      event.setCancelReason(getKickMessage(banEntry));
+      event.setCancelReason(TextComponent.fromLegacyText(getKickMessage(banEntry)));
       event.setCancelled(true);
+      event.getConnection().disconnect(TextComponent.fromLegacyText(getKickMessage(banEntry)));
     }
   }
 

@@ -28,6 +28,7 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.MySqlQueries;
 import com.gmail.tracebachi.SockExchange.Bungee.SockExchangeApi;
 import com.gmail.tracebachi.SockExchange.Utilities.BasicLogger;
 import com.gmail.tracebachi.SockExchange.Utilities.BungeeResourceUtil;
+import com.gmail.tracebachi.SockExchange.Utilities.JulBasicLogger;
 import com.gmail.tracebachi.SockExchange.Utilities.MessageFormatMap;
 import io.github.kyzderp.bungeelogger.BungeeLog;
 import io.github.kyzderp.bungeelogger.BungeeLoggerPlugin;
@@ -88,6 +89,7 @@ public class DeltaBansPlugin extends Plugin
     }
 
     readConfiguration(config);
+    ((JulBasicLogger) basicLogger).setDebugMode(inDebugMode);
 
     if (!createDatabaseTables())
     {
@@ -144,7 +146,7 @@ public class DeltaBansPlugin extends Plugin
     whitelistListener.register();
 
     // Schedule clean up of expired warnings
-    cleanupExpiredWarningsFuture = api.getSchedulingExecutor().scheduleAtFixedRate(
+    cleanupExpiredWarningsFuture = api.getScheduledExecutorService().scheduleAtFixedRate(
       warningStorage::removeExpiredWarnings, 1, 1, TimeUnit.HOURS);
   }
 
@@ -231,12 +233,12 @@ public class DeltaBansPlugin extends Plugin
 
   public Executor getExecutor()
   {
-    return SockExchangeApi.instance().getSchedulingExecutor();
+    return SockExchangeApi.instance().getScheduledExecutorService();
   }
 
   private void setupLoggers()
   {
-    basicLogger = new BasicLogger(getLogger());
+    basicLogger = new JulBasicLogger(getLogger(), inDebugMode);
     bungeeLoggerPluginLogger = null;
 
     Plugin foundPlugin = getProxy().getPluginManager().getPlugin("BungeeLogger");
