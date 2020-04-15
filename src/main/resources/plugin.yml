@@ -1,6 +1,6 @@
 name: DeltaBans
 main: com.gmail.tracebachi.DeltaBans.Spigot.DeltaBansPlugin
-version: ${project.version}
+version: @project.version@
 author: GeeItsZee (tracebachi@gmail.com)
 depend: [SockExchange, DbShare]
 commands:
