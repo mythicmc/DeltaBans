@@ -39,6 +39,7 @@ public class WarningsCommand implements CommandExecutor, Registerable
   private static final String COMMAND_NAME = "warnings";
   private static final String COMMAND_USAGE = "/warnings <name>";
   private static final String COMMAND_PERM = "DeltaBans.CheckWarnings";
+  private static final String COMMAND_PERM_SELF = "DeltaBans.CheckSelfWarnings";
 
   private final DeltaBansPlugin plugin;
   private final SockExchangeApi api;
@@ -76,19 +77,27 @@ public class WarningsCommand implements CommandExecutor, Registerable
       args = DeltaBansUtils.filterSilent(args);
     }
 
+    /*
     if (args.length < 1)
     {
       sender.sendMessage(formatMap.format(Formats.USAGE, COMMAND_USAGE));
       return true;
     }
+    */
 
-    if (!sender.hasPermission(COMMAND_PERM))
+    if (args.length > 0 && !sender.hasPermission(COMMAND_PERM))
+    {
+      sender.sendMessage(formatMap.format(Formats.NO_PERM, COMMAND_USAGE));
+      return true;
+    }
+
+    else if (!sender.hasPermission(COMMAND_PERM_SELF))
     {
       sender.sendMessage(formatMap.format(Formats.NO_PERM, COMMAND_PERM));
       return true;
     }
 
-    String nameToCheck = args[0];
+    String nameToCheck = args.length == 0 ? sender.getName() : args[0];
     ByteArrayDataOutput out = ByteStreams.newDataOutput(256);
     out.writeUTF(api.getServerName());
     out.writeUTF(sender.getName());
