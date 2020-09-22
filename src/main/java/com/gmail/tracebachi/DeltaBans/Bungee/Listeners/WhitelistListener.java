@@ -28,6 +28,7 @@ import com.gmail.tracebachi.SockExchange.Utilities.MessageFormatMap;
 import com.gmail.tracebachi.SockExchange.Utilities.Registerable;
 import com.google.common.base.Preconditions;
 import com.google.common.io.ByteArrayDataInput;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.PendingConnection;
 import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -101,8 +102,9 @@ public class WhitelistListener implements Listener, Registerable
 
     if (whitelistEnabled && !whitelistStorage.isOnNormalWhitelist(playerName))
     {
-      event.setCancelReason(formatMap.format(Formats.SERVER_IN_WHITELIST_MODE));
+      event.setCancelReason(TextComponent.fromLegacyText(formatMap.format(Formats.SERVER_IN_WHITELIST_MODE)));
       event.setCancelled(true);
+      event.getConnection().disconnect(TextComponent.fromLegacyText(formatMap.format(Formats.SERVER_IN_WHITELIST_MODE)));
     }
   }
 
