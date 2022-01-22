@@ -1,9 +1,9 @@
 # DeltaBans
-Banning plugin for BungeeCord and Spigot servers that relies on SQL storage, [DbShare](https://github.com/geeitszee/DbShare)
+Banning plugin for BungeeCord/Velocity and Spigot servers that relies on SQL storage, [DbShare](https://github.com/geeitszee/DbShare)
 for connection pooling, and [SockExchange](https://github.com/geeitszee/SockExchange)
 
 ## Installation
-Copy the same JAR into the plugins directory of your BungeeCord and Spigot installations. The
+Copy the same JAR into the plugins directory of your BungeeCord/Velocity and Spigot installations. The
 default configurations should be fine except for the `DbShareDataSourceName`. Change that setting
 to match the name of the DbShare data source to load from and save to. In case of authentication
 plugins, configure the `IpLookup` section of the Spigot configuration. This will add IPs to bans
