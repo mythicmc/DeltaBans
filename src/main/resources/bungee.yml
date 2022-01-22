@@ -2,4 +2,4 @@ name: DeltaBans
 main: com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPlugin
 version: @project.version@
 author: GeeItsZee (tracebachi@gmail.com)
-depends: [SockExchange, DbShare]
+depends: [SockExchange, DbShare, BungeeLogger]

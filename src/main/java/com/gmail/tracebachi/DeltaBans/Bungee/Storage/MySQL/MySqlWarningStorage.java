@@ -17,7 +17,7 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPlugin;
+import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPluginInterface;
 import com.gmail.tracebachi.DeltaBans.Bungee.Entries.WarningEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WarningStorage;
 import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.MySqlQueries;
@@ -32,13 +32,13 @@ import java.util.*;
  */
 public class MySqlWarningStorage implements WarningStorage
 {
-  private final DeltaBansPlugin plugin;
+  private final DeltaBansPluginInterface plugin;
   private final BasicLogger logger;
   private final long warningDuration;
   private final HashMap<String, List<WarningEntry>> warningsMap = new HashMap<>();
 
   public MySqlWarningStorage(
-    DeltaBansPlugin plugin, BasicLogger logger, long warningDuration)
+          DeltaBansPluginInterface plugin, BasicLogger logger, long warningDuration)
   {
     Preconditions.checkNotNull(plugin, "plugin");
     Preconditions.checkNotNull(logger, "logger");

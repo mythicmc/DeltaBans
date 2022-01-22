@@ -17,7 +17,7 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPlugin;
+import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPluginInterface;
 import com.gmail.tracebachi.DeltaBans.Bungee.Entries.RangeBanEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.RangeBanStorage;
 import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.MySqlQueries;
@@ -35,11 +35,11 @@ import java.util.ListIterator;
  */
 public class MySqlRangeBanStorage implements RangeBanStorage
 {
-  private final DeltaBansPlugin plugin;
+  private final DeltaBansPluginInterface plugin;
   private final BasicLogger logger;
   private final List<RangeBanEntry> rangeBanList = new ArrayList<>();
 
-  public MySqlRangeBanStorage(DeltaBansPlugin plugin, BasicLogger logger)
+  public MySqlRangeBanStorage(DeltaBansPluginInterface plugin, BasicLogger logger)
   {
     Preconditions.checkNotNull(plugin, "plugin");
     Preconditions.checkNotNull(logger, "logger");

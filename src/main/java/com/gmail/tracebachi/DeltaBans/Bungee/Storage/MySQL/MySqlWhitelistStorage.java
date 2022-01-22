@@ -17,7 +17,7 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPlugin;
+import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPluginInterface;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.WhitelistStorage;
 import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.MySqlQueries;
 import com.gmail.tracebachi.SockExchange.Utilities.BasicLogger;
@@ -38,11 +38,11 @@ public class MySqlWhitelistStorage implements WhitelistStorage
   private final int NORMAL_WHITELIST = 0b01;
   private final int RANGEBAN_WHITELIST = 0b10;
 
-  private final DeltaBansPlugin plugin;
+  private final DeltaBansPluginInterface plugin;
   private final BasicLogger logger;
   private final Map<String, Integer> whitelistMap = new HashMap<>();
 
-  public MySqlWhitelistStorage(DeltaBansPlugin plugin, BasicLogger logger)
+  public MySqlWhitelistStorage(DeltaBansPluginInterface plugin, BasicLogger logger)
   {
     Preconditions.checkNotNull(plugin, "plugin");
     Preconditions.checkNotNull(logger, "logger");

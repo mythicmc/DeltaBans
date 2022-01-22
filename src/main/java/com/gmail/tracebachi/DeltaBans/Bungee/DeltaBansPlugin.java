@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author GeeItsZee (tracebachi@gmail.com)
  */
-public class DeltaBansPlugin extends Plugin
+public class DeltaBansPlugin extends Plugin implements DeltaBansPluginInterface
 {
   private Configuration config;
   private boolean inDebugMode;

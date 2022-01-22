@@ -14,14 +14,16 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-    jcenter()
+    mavenCentral()
     maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
     maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
 }
 
 dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.13.2-R0.1-SNAPSHOT'
-    compileOnly 'net.md-5:bungeecord-api:1.14-SNAPSHOT'
+    compileOnly 'net.md-5:bungeecord-api:1.16-R0.4'
+    compileOnly 'com.velocitypowered:velocity-api:3.0.1'
+    annotationProcessor 'com.velocitypowered:velocity-api:3.0.1'
     compileOnly fileTree(dir: "lib", includes: ["*.jar"])
 }
 

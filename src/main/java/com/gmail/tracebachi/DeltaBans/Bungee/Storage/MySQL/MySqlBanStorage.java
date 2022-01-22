@@ -17,7 +17,7 @@
  */
 package com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL;
 
-import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPlugin;
+import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPluginInterface;
 import com.gmail.tracebachi.DeltaBans.Bungee.Entries.BanEntry;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.BanStorage;
 import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.MySqlQueries;
@@ -32,13 +32,13 @@ import java.util.*;
  */
 public class MySqlBanStorage implements BanStorage
 {
-  private final DeltaBansPlugin plugin;
+  private final DeltaBansPluginInterface plugin;
   private final Set<BanEntry> banSet = new HashSet<>();
   private final Map<String, List<BanEntry>> nameBanMap = new HashMap<>();
   private final Map<String, List<BanEntry>> ipBanMap = new HashMap<>();
   private final BasicLogger logger;
 
-  public MySqlBanStorage(DeltaBansPlugin plugin, BasicLogger logger)
+  public MySqlBanStorage(DeltaBansPluginInterface plugin, BasicLogger logger)
   {
     Preconditions.checkNotNull(plugin, "plugin");
     Preconditions.checkNotNull(logger, "logger");
