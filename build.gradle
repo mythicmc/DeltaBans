@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'com.gmail.tracebachi'
-version '2.0.1'
+version '2.1.0'
 
 description = "Banning plugin for BungeeCord and Spigot servers that relies on SQL storage, DbShare for connection pooling, and SockExchange"
 
