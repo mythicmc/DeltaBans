@@ -336,7 +336,7 @@ public class DeltaBansPlugin implements DeltaBansPluginInterface
     section = config.getNode("Formats");
     for (Map.Entry<Object, ? extends ConfigurationNode> formatNode : section.getChildrenMap().entrySet())
     {
-      String formatKey = (String) formatNode.getKey();
+      String formatKey = formatNode.getKey().toString();
       String format = formatNode.getValue().getString();
       String translated = translateAlternateColorCodes('&', format);
       messageFormatMap.put(formatKey, translated);
@@ -345,7 +345,7 @@ public class DeltaBansPlugin implements DeltaBansPluginInterface
     section = config.getNode("WarningCommands");
     for (Map.Entry<Object, ? extends ConfigurationNode> node : section.getChildrenMap().entrySet())
     {
-      String key = (String) node.getKey();
+      String key = node.getKey().toString();
       try
       {
         int amountOfWarnings = Integer.parseInt(key);
