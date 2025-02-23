@@ -19,9 +19,9 @@ package com.gmail.tracebachi.DeltaBans.Velocity;
 
 import com.gmail.tracebachi.DbShare.DbShare;
 import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPluginInterface;
-import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.CheckBanListener;
-import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.CheckWarningsListener;
-import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.WarningListener;
+import com.gmail.tracebachi.DeltaBans.Velocity.Listeners.CheckBanListener;
+import com.gmail.tracebachi.DeltaBans.Velocity.Listeners.CheckWarningsListener;
+import com.gmail.tracebachi.DeltaBans.Velocity.Listeners.WarningListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.*;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL.MySqlBanStorage;
 import com.gmail.tracebachi.DeltaBans.Bungee.Storage.MySQL.MySqlRangeBanStorage;
@@ -166,7 +166,7 @@ public class DeltaBansPlugin implements DeltaBansPluginInterface
     playerLoginListener.register();
 
     warningListener = new WarningListener(
-            warningStorage, warningCommandsMap, api, messageFormatMap);
+            this, warningStorage, warningCommandsMap, api, messageFormatMap);
     warningListener.register();
 
     whitelistListener = new WhitelistListener(
