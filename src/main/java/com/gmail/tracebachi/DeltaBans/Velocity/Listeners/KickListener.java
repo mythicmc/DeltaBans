@@ -20,6 +20,7 @@ package com.gmail.tracebachi.DeltaBans.Velocity.Listeners;
 import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Channels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Formats;
 import com.gmail.tracebachi.DeltaBans.Velocity.DeltaBansPlugin;
+import com.gmail.tracebachi.DeltaBans.Velocity.Events.KickEvent;
 import com.gmail.tracebachi.SockExchange.Bungee.SockExchangeApi;
 import com.gmail.tracebachi.SockExchange.Messages.ReceivedMessage;
 import com.gmail.tracebachi.SockExchange.Utilities.MessageFormatMap;
@@ -96,6 +97,9 @@ public class KickListener implements Registerable
     // Announce kick
     String announcement = formatMap.format(Formats.ANNOUNCE_KICK, kicker, nameToKick, message);
     announce(announcement, isSilent);
+
+    // fire event
+    plugin.getServer().getEventManager().fire(new KickEvent(kicker, nameToKick, message, isSilent));
   }
 
   private void announce(String announcement, boolean isSilent)

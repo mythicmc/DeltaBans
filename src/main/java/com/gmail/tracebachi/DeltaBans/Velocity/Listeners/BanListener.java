@@ -25,6 +25,10 @@ import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Channels;
 import com.gmail.tracebachi.DeltaBans.DeltaBansConstants.Formats;
 import com.gmail.tracebachi.DeltaBans.DeltaBansUtils;
 import com.gmail.tracebachi.DeltaBans.Velocity.DeltaBansPlugin;
+import com.gmail.tracebachi.DeltaBans.Velocity.Events.BanEvent;
+import com.gmail.tracebachi.DeltaBans.Velocity.Events.RangeBanEvent;
+import com.gmail.tracebachi.DeltaBans.Velocity.Events.RangeUnbanEvent;
+import com.gmail.tracebachi.DeltaBans.Velocity.Events.UnbanEvent;
 import com.gmail.tracebachi.SockExchange.Bungee.SockExchangeApi;
 import com.gmail.tracebachi.SockExchange.Messages.ReceivedMessage;
 import com.gmail.tracebachi.SockExchange.Messages.ReceivedMessageNotifier;
@@ -144,6 +148,9 @@ public class BanListener implements Registerable
     {
       kickOffProxy(name, ip, getKickMessage(entry));
       announce(formatBanAnnouncement(entry, isSilent), isSilent);
+
+      // fire event
+      plugin.getServer().getEventManager().fire(new BanEvent(banner, name, message, ip, isSilent, duration));
     }
   }
 
@@ -175,6 +182,9 @@ public class BanListener implements Registerable
 
     String announcement = formatUnbanAnnouncement(unbanner, nameOrIpToUnban, isIp, isSilent);
     announce(announcement, isSilent);
+
+    // fire event
+    plugin.getServer().getEventManager().fire(new UnbanEvent(unbanner, nameOrIpToUnban, isIp, isSilent));
   }
 
   private void onRangeBanChannelRequest(ReceivedMessage receivedMessage)
@@ -209,6 +219,9 @@ public class BanListener implements Registerable
     }
 
     announce(formatMap.format(Formats.ANNOUNCE_RANGEBAN, banner, rangeBanRange, message), isSilent);
+
+    // fire event
+    plugin.getServer().getEventManager().fire(new RangeBanEvent(banner, startIp, endIp, message, isSilent));
   }
 
   private void onRangeUnbanChannelRequest(ReceivedMessage receivedMessage)
@@ -225,6 +238,9 @@ public class BanListener implements Registerable
     String announcement = formatMap.format(Formats.ANNOUNCE_RANGEUNBAN, unbanner,
       String.valueOf(count), ip);
     announce(announcement, isSilent);
+
+    // fire event
+    plugin.getServer().getEventManager().fire(new RangeUnbanEvent(unbanner, ip, isSilent));
   }
 
   private void kickOffProxy(String name, String ip, String message)
