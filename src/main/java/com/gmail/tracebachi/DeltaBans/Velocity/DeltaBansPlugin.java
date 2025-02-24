@@ -66,7 +66,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author GeeItsZee (tracebachi@gmail.com)
  */
-@Plugin(id = "deltabans", name = "DeltaBans", version = "2.1.0",
+@Plugin(id = "deltabans", name = "DeltaBans", version = "2.2.0",
         authors = {"GeeItsZee (tracebachi@gmail.com)"}, dependencies = {
         @Dependency(id = "dbshare"), @Dependency(id = "bungeelogger"), @Dependency(id = "sockexchange")})
 public class DeltaBansPlugin implements DeltaBansPluginInterface
