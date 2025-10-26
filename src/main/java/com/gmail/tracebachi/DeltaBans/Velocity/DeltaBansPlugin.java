@@ -288,8 +288,7 @@ public class DeltaBansPlugin implements DeltaBansPluginInterface
   {
     try
     {
-      File file = BungeeResourceUtil.saveResource(
-              s -> DeltaBansPlugin.this.getClass().getResourceAsStream(s), dataDirectory.toFile(),
+      File file = BungeeResourceUtil.saveResource(this, dataDirectory.toFile(),
               "bungee-config.yml", "config.yml", false);
       config = YAMLConfigurationLoader.builder().setPath(file.toPath()).build().load();
 
@@ -298,8 +297,7 @@ public class DeltaBansPlugin implements DeltaBansPluginInterface
         return true;
       }
 
-      BungeeResourceUtil.saveResource(
-              s -> DeltaBansPlugin.this.getClass().getResourceAsStream(s), dataDirectory.toFile(),
+      BungeeResourceUtil.saveResource(this, dataDirectory.toFile(),
               "bungee-config.yml", "config-example.yml", true);
       logger.error("Invalid configuration file!");
       return false;
