@@ -18,6 +18,7 @@
 package com.gmail.tracebachi.DeltaBans.Velocity;
 
 import com.gmail.tracebachi.DbShare.DbShare;
+import com.gmail.tracebachi.DeltaBans.BuildMetadata;
 import com.gmail.tracebachi.DeltaBans.Bungee.DeltaBansPluginInterface;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.CheckBanListener;
 import com.gmail.tracebachi.DeltaBans.Bungee.Listeners.CheckWarningsListener;
@@ -66,7 +67,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author GeeItsZee (tracebachi@gmail.com)
  */
-@Plugin(id = "deltabans", name = "DeltaBans", version = "2.2.0",
+@Plugin(id = "deltabans", name = "DeltaBans", version = BuildMetadata.VERSION,
         authors = {"GeeItsZee (tracebachi@gmail.com)"}, dependencies = {
         @Dependency(id = "dbshare"), @Dependency(id = "bungeelogger"), @Dependency(id = "sockexchange")})
 public class DeltaBansPlugin implements DeltaBansPluginInterface
