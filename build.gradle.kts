@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.gmail.tracebachi"
-version = "2.2.0"
+version = "2.2.1"
 
 description = "Banning plugin for BungeeCord and Spigot servers that relies on SQL storage, DbShare for connection pooling, and SockExchange"
 
